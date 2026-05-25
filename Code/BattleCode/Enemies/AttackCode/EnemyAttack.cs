@@ -8,7 +8,7 @@ using PSB.Code.BattleCode.Events;
 using PSB.Code.BattleCode.Players;
 using PSW.Code.EventBus;
 using UnityEngine;
-using YIS.Code.UI;
+using YIS.Code.Combat;
 using YIS.Code.Modules;
 using YIS.Code.Skills;
 

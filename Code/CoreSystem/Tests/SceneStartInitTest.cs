@@ -2,6 +2,8 @@
 using PSB.Code.BattleCode.Players;
 using PSW.Code.EventBus;
 using System.Collections;
+using PSB.Code.BattleCode.Enemies.AttackCode;
+using PSB.Code.CoreSystem.SaveSystem;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Work.PSB.Code.FieldCode.MapSaves;
@@ -18,6 +20,12 @@ namespace Work.PSB.Code.CoreSystem.Tests
         {
             yield return null;
 
+            if (BattleContext.IsReturningDummy)
+            {
+                BattleContext.IsReturningDummy = false;
+                yield break; 
+            }
+
             var backupPlayer = SceneObjectRegistry.GetPlayer();
 
             SceneObjectRegistry.Clear();
@@ -29,6 +37,7 @@ namespace Work.PSB.Code.CoreSystem.Tests
 
             stageDataSO.DeleteJson();
             PlayerHealthSave.Reset();
+            EnemyProgressionManager.ResetStage();
             Bus<VillageResetEvent>.Raise(new VillageResetEvent());
         }
 

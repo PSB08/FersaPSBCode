@@ -62,7 +62,7 @@ namespace PSB.Code.CoreSystem.SaveSystem
             EnsureDefaults();
         }
 
-        //#if UNITY_EDITOR
+        #if UNITY_EDITOR
         private void Update()
         {
             if (Keyboard.current.f1Key.wasPressedThisFrame)
@@ -72,7 +72,7 @@ namespace PSB.Code.CoreSystem.SaveSystem
             if (Keyboard.current.f3Key.wasPressedThisFrame)
                 Add(ItemType.BossCoin, 1000);
         }
-        //#endif
+        #endif
         
         private void OnEnable()
         {

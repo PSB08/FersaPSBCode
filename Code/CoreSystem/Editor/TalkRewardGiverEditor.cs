@@ -52,10 +52,21 @@ namespace Work.PSB.Code.CoreSystem.Editor
                     EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width, line), 
                         element.FindPropertyRelative("useItemDropper"));
                 }
+                else if(typeProp.enumValueIndex == (int)TalkRewardGiver.RewardType.GiveRelic)
+                {
+                    EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width, line),
+                        element.FindPropertyRelative("rewardRelic"));
+                }
+                else if (typeProp.enumValueIndex == (int)TalkRewardGiver.RewardType.GiveRandomRelic)
+                {
+                    EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width, line),
+                        element.FindPropertyRelative("relicList"));
+                }
                 else
                 {
-                    EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width, line), 
+                    EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width, line),
                         element.FindPropertyRelative("rewardObject"));
+
                 }
             };
         }

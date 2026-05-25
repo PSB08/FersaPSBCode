@@ -2,7 +2,7 @@
 using CIW.Code;
 using UnityEngine;
 using Work.YIS.Code.Buffs;
-using YIS.Code.UI;
+using YIS.Code.Combat;
 using YIS.Code.Modules;
 using YIS.Code.Skills;
 using YIS.Code.Skills.Interfaces;

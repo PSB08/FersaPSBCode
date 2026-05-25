@@ -7,6 +7,7 @@ using PSB.Code.CoreSystem.SaveSystem;
 using PSW.Code.EventBus;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Work.CSH.Scripts.Relics;
 using Work.PSB.Code.FieldCode;
 using Work.PSB.Code.FieldCode.MapSaves;
 using YIS.Code.Defines;
@@ -19,7 +20,9 @@ namespace Work.PSB.Code.CoreSystem
         public enum RewardType
         {
             DropTable, 
-            ActiveObject
+            ActiveObject,
+            GiveRelic,
+            GiveRandomRelic,
         }
 
         [Serializable]
@@ -30,7 +33,9 @@ namespace Work.PSB.Code.CoreSystem
 
             public DropTableSO dropTable;
             public bool useItemDropper;
-            public GameObject rewardObject; 
+            public GameObject rewardObject;
+            public Relic rewardRelic;
+            public RelicDatabase relicList;
         }
 
         [SerializeField] private RewardEntry[] rewardEntries;
@@ -85,18 +90,42 @@ namespace Work.PSB.Code.CoreSystem
             if (!_map.TryGetValue(evt.RewardKey, out var entry)) 
                 return;
 
-            if (entry.rewardType == RewardType.ActiveObject)
+            switch(entry.rewardType)
             {
-                if (entry.rewardObject != null)
+                case RewardType.ActiveObject:
                 {
-                    entry.rewardObject.SetActive(true);
-                    Bus<RequestSaveEvent>.Raise(new RequestSaveEvent());
+                    if (entry.rewardObject != null)
+                    {
+                        entry.rewardObject.SetActive(true);
+                        Bus<RequestSaveEvent>.Raise(new RequestSaveEvent());
+                    }
+                    break;
+                }
+                case RewardType.DropTable:
+                {
+                    ProcessDropTableReward(entry, evt.WorldPos);
+                    break;
+                }
+                case RewardType.GiveRelic:
+                {
+                    if (entry.rewardRelic != null)
+                    {
+                        Bus<AddRelic>.Raise(new AddRelic(entry.rewardRelic));
+                        Bus<RequestSaveEvent>.Raise(new RequestSaveEvent());
+                    }
+                    break;
+                }
+                case RewardType.GiveRandomRelic:
+                {
+                    if (entry.relicList != null && entry.relicList.Relics.Count > 0)
+                    {
+                        Bus<AddRandomRelic>.Raise(new AddRandomRelic(entry.relicList));
+                        Bus<RequestSaveEvent>.Raise(new RequestSaveEvent());
+                    }
+                    break;
                 }
             }
-            else
-            {
-                ProcessDropTableReward(entry, evt.WorldPos);
-            }
+            
         }
 
         private void ProcessDropTableReward(RewardEntry entry, Vector3 worldPos)
@@ -129,12 +158,16 @@ namespace Work.PSB.Code.CoreSystem
                     {
                         CurrencyContainer.Add(d.item.itemType, amount);
                     }
-                    else
+                    else if(d.item.itemType == ItemType.Item)
                     {
                         for (int i = 0; i < amount; i++)
                         {
                             inventory.TryAddItem(d.item);
                         }
+                    }
+                    else if(d.item.itemType == ItemType.Relic)
+                    {
+                        Bus<AddRandomRelic>.Raise(new AddRandomRelic(d.item.relicList));
                     }
                 }
             }

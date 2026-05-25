@@ -80,7 +80,10 @@ namespace PSB.Code.BattleCode.Enemies
             StopSequenceIfRunning();
             KillAllArrangeTweens();
             if (_turnManagerCache != null)
+            {
                 _turnManagerCache.OnBattleEndedCondition = null;
+                _turnManagerCache.OnTurnStarted -= HandleTurnStarted;
+            }
         }
 
         private void ResetState()
@@ -322,6 +325,8 @@ namespace PSB.Code.BattleCode.Enemies
             {
                 _turnManagerCache = battleEnemy.TurnManager;
                 _turnManagerCache.OnBattleEndedCondition = CheckAllEnemiesDead;
+
+                _turnManagerCache.OnTurnStarted += HandleTurnStarted;
             }
         }
 
@@ -491,8 +496,8 @@ namespace PSB.Code.BattleCode.Enemies
                 }
             }
             
-            TickEnemyBuffsOnce(activeEnemies);
-            yield return new WaitForSeconds(0.3f);
+            //TickEnemyBuffsOnce(activeEnemies);
+            //yield return new WaitForSeconds(0.3f);
 
             _isAttackSequenceRunning = false;
             _seqCo = null;
@@ -525,6 +530,14 @@ namespace PSB.Code.BattleCode.Enemies
                 enemy.buffModule?.UpdateTime();
             }
         }
-        
+
+        private void HandleTurnStarted(bool isPlayerTurn)
+        {
+            if (isPlayerTurn)
+            {
+                Debug.Log("플레이어 턴 시작: 적들에게 걸린 도트 데미지를 일괄 적용합니다.");
+                TickEnemyBuffsOnce(enemies);
+            }
+        }
     }
 }

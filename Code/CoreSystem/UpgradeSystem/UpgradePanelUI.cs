@@ -31,7 +31,16 @@ namespace Work.PSB.Code.CoreSystem.UpgradeSystem
 
             [Header("UI - Display")]
             public TextMeshProUGUI enhancedValueText;
-            public string enhancedFormat = "+ {0} {1}";
+            
+            public string enhancedFormat = "{0} + {1}";
+
+            [Header("UI - Level")]
+            public TextMeshProUGUI levelText;
+            public string levelFormat = "Lv.{0}";
+
+            [Header("UI - PP")]
+            public TextMeshProUGUI ppText;
+            public string ppFormat = "PP : {0}";
 
             [Header("Milestones")]
             public MilestoneUI[] milestoneIcons;
@@ -45,12 +54,14 @@ namespace Work.PSB.Code.CoreSystem.UpgradeSystem
 
         [Header("Top Info")]
         [SerializeField] private TextMeshProUGUI ppValueTxt;
-        [SerializeField] private TextMeshProUGUI remainingLevelTxt;
-        [SerializeField] private string remainingLevelFormat = "남은 포인트: {0}";
+        [SerializeField] private TextMeshProUGUI progressLevelTxt;
+        
+        [SerializeField] private string progressLevelFormat = "진행한 강화 횟수: {0} / {1}";
 
         [Header("Reset")]
         [SerializeField] private Button resetBtn;
         [SerializeField] private ItemType resetCostType = ItemType.PP;
+        [SerializeField] private ItemType pointValueType = ItemType.PP;
         [SerializeField] private int resetCost = 500;
 
         [Header("Settings")]
@@ -62,6 +73,7 @@ namespace Work.PSB.Code.CoreSystem.UpgradeSystem
 
         private void Awake()
         {
+            Debug.Log("서비스 생성");
             _service = new UpgradeService(playerStat, globalMaxLevel);
         }
 
@@ -90,6 +102,8 @@ namespace Work.PSB.Code.CoreSystem.UpgradeSystem
             {
                 resetBtn.onClick.AddListener(() =>
                 {
+                    if (_service.GetTotalGlobalLevel(GetAllDefs()) <= 0) return;
+
                     if (_service.TryResetAllUpgrades(GetAllDefs(), resetCostType, resetCost))
                     {
                         RefreshAll();
@@ -120,23 +134,27 @@ namespace Work.PSB.Code.CoreSystem.UpgradeSystem
 
         private void OnCurrencyChanged(CurrencyChangedEvent evt)
         {
-            if (evt.Type == ItemType.PP || evt.Type == resetCostType) 
+            if (evt.Type == pointValueType || evt.Type == resetCostType) 
                 RefreshAll();
         }
 
         public void RefreshAll()
         {
             if (ppValueTxt != null)
-                ppValueTxt.text = CurrencyContainer.Get(ItemType.PP).ToString();
+                ppValueTxt.text = CurrencyContainer.Get(pointValueType).ToString();
 
-            if (remainingLevelTxt != null)
-                remainingLevelTxt.text = string.Format(remainingLevelFormat, 
-                    _service.GetRemainingGlobalLevel(GetAllDefs()));
+            if (progressLevelTxt != null)
+            {
+                progressLevelTxt.text = string.Format(progressLevelFormat, 
+                    _service.GetTotalGlobalLevel(GetAllDefs()), globalMaxLevel);
+            }
 
             if (resetBtn != null)
             {
                 bool canAffordReset = CurrencyContainer.Get(resetCostType) >= resetCost;
-                resetBtn.interactable = canAffordReset;
+                bool hasAnyUpgrade = _service.GetTotalGlobalLevel(GetAllDefs()) > 0;
+                
+                resetBtn.interactable = canAffordReset && hasAnyUpgrade;
             }
 
             if (entries == null) return;
@@ -154,12 +172,16 @@ namespace Work.PSB.Code.CoreSystem.UpgradeSystem
             if (e == null || e.def == null || e.def.targetStat == null)
             {
                 if (e?.enhancedValueText != null) e.enhancedValueText.text = "-";
+                if (e?.levelText != null) e.levelText.text = "-";
+                if (e?.ppText != null) e.ppText.text = "-";
                 return;
             }
 
             if (playerStat == null)
             {
                 if (e.enhancedValueText != null) e.enhancedValueText.text = "?";
+                if (e.levelText != null) e.levelText.text = "?";
+                if (e.ppText != null) e.ppText.text = "-";
                 return;
             }
 
@@ -167,9 +189,22 @@ namespace Work.PSB.Code.CoreSystem.UpgradeSystem
             int baseValue = e.def.baseReferenceValue;
             int enhanced = current - baseValue;
 
+            int level = _service.GetCurrentLevel(e.def);
+            int pp = e.def.GetNextCost(level);
+
             if (e.enhancedValueText != null)
             {
-                e.enhancedValueText.text = string.Format(e.enhancedFormat, enhanced, e.def.targetStat.statName);
+                e.enhancedValueText.text = string.Format(e.enhancedFormat, e.def.targetStat.displayName, enhanced);
+            }
+
+            if (e.levelText != null)
+            {
+                e.levelText.text = string.Format(e.levelFormat, level);
+            }
+
+            if (e.ppText != null)
+            {
+                e.ppText.text = string.Format(e.ppFormat, pp);
             }
         }
 
@@ -224,5 +259,6 @@ namespace Work.PSB.Code.CoreSystem.UpgradeSystem
         {
             RefreshAll();
         }
+        
     }
 }

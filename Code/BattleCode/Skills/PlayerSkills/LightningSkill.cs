@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using CIW.Code;
 using UnityEngine;
-using YIS.Code.UI;
+using YIS.Code.Combat;
 using YIS.Code.Skills;
 using YIS.Code.Skills.Interfaces;
 using YIS.Code.Skills.Sequences;

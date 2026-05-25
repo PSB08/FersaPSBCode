@@ -1,15 +1,16 @@
-﻿using CIW.Code;
+﻿using System.Linq;
+using CIW.Code;
 using Code.Scripts.Entities;
 using PSB_Lib.Dependencies;
 using PSB.Code.BattleCode.Enemies.AttackCode;
 using PSB.Code.BattleCode.Enemies.BTs;
 using PSB.Code.BattleCode.Enemies.BTs.Events;
+using PSB.Code.BattleCode.Entities;
 using PSW.Code.EventBus;
 using Unity.Behavior;
 using UnityEngine;
 using Work.CSH.Scripts.Interfaces;
 using Work.CSH.Scripts.Managers;
-using Work.PSB.Code.CoreSystem.Tests;
 using YIS.Code.Modules;
 
 namespace PSB.Code.BattleCode.Enemies
@@ -28,6 +29,8 @@ namespace PSB.Code.BattleCode.Enemies
         private ItemDropper _itemDropper;
         private EnemyHitReaction _hitReaction;
         private ChangeNewState _stateChannel;
+
+        private EntityHealth _health;
         
         protected string StateChannelKey => "ChangeNewState";
         public BuffModule buffModule;
@@ -40,6 +43,7 @@ namespace PSB.Code.BattleCode.Enemies
 
             _hitReaction = GetComponent<EnemyHitReaction>();
             buffModule = owner.GetModule<BuffModule>();
+            _health = owner.GetModule<EntityHealth>();
             /*if (_hitReaction != null)
                 _hitReaction.InitializeAnim();*/
         }
@@ -104,6 +108,8 @@ namespace PSB.Code.BattleCode.Enemies
             EnemyAttack attackComp = GetModule<EnemyAttack>();
             if (attackComp != null && enemySO != null)
                 attackComp.SetAttackSkills(enemySO.attackSkills);
+            
+            InitPhaseSystem();
         }
         
         protected virtual void OnAfterOverrideStats(EntityStat statComp) { }
@@ -181,6 +187,21 @@ namespace PSB.Code.BattleCode.Enemies
 
         public void SendBTState(BattleEnemyState state)
             => _stateChannel?.SendEventMessage(state);
+        
+        private void InitPhaseSystem()
+        {
+            if (enemySO == null || enemySO.phases == null || enemySO.phases.Length == 0) return;
+
+            var thresholds = enemySO.phases
+                .OrderByDescending(p => p.hpThresholdPercent)
+                .Select(p => p.hpThresholdPercent)
+                .ToList();
+
+            if (_health != null)
+            {
+                _health.SetPhaseThresholds(thresholds);
+            }
+        }
         
     }
 }

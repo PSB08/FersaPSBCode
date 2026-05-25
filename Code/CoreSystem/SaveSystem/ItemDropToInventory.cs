@@ -1,6 +1,7 @@
 ﻿using PSB.Code.CoreSystem.Events;
 using PSW.Code.EventBus;
 using UnityEngine;
+using Work.CSH.Scripts.Relics;
 using YIS.Code.Defines;
 
 namespace PSB.Code.CoreSystem.SaveSystem
@@ -46,6 +47,10 @@ namespace PSB.Code.CoreSystem.SaveSystem
                         Bus<BattleCurrencyAddedEvent>.Raise(
                             new BattleCurrencyAddedEvent(d.item.itemType, d.amount));
                     }
+                    else if(d.item.relicList != null)
+                    {
+                        Bus<AddRandomRelic>.Raise(new AddRandomRelic(d.item.relicList));
+                    }
                     else
                     {
                         int addedCount = 0;
@@ -68,6 +73,10 @@ namespace PSB.Code.CoreSystem.SaveSystem
                     if (isCurrency)
                     {
                         CurrencyContainer.Add(d.item.itemType, d.amount);
+                    }
+                    else if (d.item.relicList != null)
+                    {
+                        Bus<AddRandomRelic>.Raise(new AddRandomRelic(d.item.relicList));
                     }
                     else
                     {

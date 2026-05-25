@@ -8,13 +8,16 @@ namespace PSB.Code.CoreSystem.SaveSystem
         public static string FieldSceneName { get; private set; }
         public static List<string> InvolvedEnemyIDs { get; private set; } = new List<string>();
         public static bool ExitBySetting { get; private set; }
+        public static bool IsReturningDummy { get; set; }
 
-        public static void Set(string fieldSceneName, List<string> involvedEnemyIDs)
+
+        public static void Set(string fieldSceneName, List<string> involvedEnemyIDs, bool isDummyBattle)
         {
             HasContext = true;
             FieldSceneName = fieldSceneName;
             InvolvedEnemyIDs = involvedEnemyIDs;
             ExitBySetting = false;
+            IsReturningDummy = isDummyBattle;
         }
 
         public static void Clear()

@@ -1,4 +1,5 @@
 ﻿using DG.Tweening;
+using PSW.Code.Dial;
 using PSW.Code.EventBus;
 using TMPro;
 using UnityEngine;
@@ -20,11 +21,13 @@ namespace PSB.Code.BattleCode.UIs.BossShopUI
         [SerializeField] private TextMeshProUGUI itemPriceText;
         [SerializeField] private Image itemIcon;
         [SerializeField] private Image currencyIcon;
-        
+        [SerializeField] private Image colorOutLine;
+
         [SerializeField] private Sprite coinIcon;
         [SerializeField] private Sprite bossCoinIcon;
 
         [SerializeField] private Material outLineMap;
+        [SerializeField] private SkillCircleDataListSO colorDataSo;
         [SerializeField] private string setValue = "_BloomPower";
         [SerializeField] private float popTime = 0.25f;
         [SerializeField] private float popUpValue = 10;
@@ -55,6 +58,11 @@ namespace PSB.Code.BattleCode.UIs.BossShopUI
                     itemIcon.sprite = itemDataSO.shopItemData.skillData.visualData.icon;
                     itemNameText.SetText(itemDataSO.shopItemData.skillData.visualData.uiName);
                     itemPriceText.SetText(itemDataSO.itemPrice.ToString());
+                    
+                    if (colorOutLine == null || colorDataSo == null)
+                        break;
+
+                    colorOutLine.color = colorDataSo.GetOutLineColor(itemDataSO.shopItemData.skillData.grade);
                     break;
             }
             SetCurrencyIcon(itemDataSO.currencyType);

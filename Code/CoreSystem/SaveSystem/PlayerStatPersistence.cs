@@ -67,10 +67,21 @@ namespace PSB.Code.CoreSystem.SaveSystem
             foreach (var snap in _loaded.stats)
             {
                 if (string.IsNullOrEmpty(snap.statName)) continue;
-
-                if (_stat.TryGetStat(snap.statName, out var runtimeStat) && runtimeStat != null)
+                
+                if (snap.statName.Contains("Origin"))
                 {
-                    runtimeStat.BaseValue = snap.baseValue;
+                    string str = snap.statName.Replace("Origin", "");
+                    if (_stat.TryGetStat(str, out var originStat) && originStat != null)
+                    {
+                        originStat.BaseValue += snap.baseValue;
+                    }
+                }
+                else
+                {
+                    if (_stat.TryGetStat(snap.statName, out var runtimeStat) && runtimeStat != null)
+                    {
+                        runtimeStat.BaseValue = snap.baseValue;
+                    }
                 }
             }
         }
@@ -86,6 +97,7 @@ namespace PSB.Code.CoreSystem.SaveSystem
             if (_stat == null) return;
 
             var data = new PlayerStatSaveData();
+
             foreach (var s in _stat.GetAllStats())
             {
                 if (s == null) continue;

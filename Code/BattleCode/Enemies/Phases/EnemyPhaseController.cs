@@ -4,7 +4,6 @@ using PSB.Code.BattleCode.Enemies.AttackCode;
 using PSB.Code.BattleCode.Enemies.Phases;
 using PSB.Code.BattleCode.Entities;
 using PSW.Code.EventBus;
-using PSB.Code.BattleCode.Enemies.BTs.Events;
 using PSB.Code.BattleCode.Events;
 using UnityEngine;
 using YIS.Code.Modules;
@@ -20,6 +19,12 @@ namespace PSB.Code.BattleCode.Enemies
         private List<EnemyPhaseData> _sortedPhases = new();
         private int _currentPhaseIndex = 0;
 
+        private int _currentUIPhaseIndex = 0; 
+        private int _totalUIPhases = 0;
+
+        public int CurrentPhaseNum => _currentUIPhaseIndex + 1;
+        public int TotalPhases => _totalUIPhases;
+
         public void Initialize(ModuleOwner owner)
         {
             _battleEnemy = owner as BattleEnemy;
@@ -27,7 +32,7 @@ namespace PSB.Code.BattleCode.Enemies
             _enemyAttack = owner.GetModule<EnemyAttack>();
         }
 
-        private void Start()
+        private System.Collections.IEnumerator Start()
         {
             if (_battleEnemy != null && _battleEnemy.enemySO != null)
             {
@@ -36,21 +41,21 @@ namespace PSB.Code.BattleCode.Enemies
                     _sortedPhases = _battleEnemy.enemySO.phases
                         .OrderByDescending(p => p.hpThresholdPercent)
                         .ToList();
+
+                    _totalUIPhases = _sortedPhases.Select(p => p.hpThresholdPercent).Distinct().Count();
                 }
-                else
-                {
-                    Debug.Log($"[EnemyPhaseController] " +
-                              $"{_battleEnemy.gameObject.name}에 설정된 페이즈 데이터가 없습니다");
-                }
-            }
-            else
-            {
-                Debug.LogError("[EnemyPhaseController] Start 시점에서 EnemySO를 찾을 수 없습니다");
             }
 
             if (_entityHealth != null)
             {
-                _entityHealth.OnHealthChangeEvent += HandleHealthChanged;
+                _entityHealth.OnTotalHealthChangeEvent += HandleHealthChanged;
+            }
+
+            yield return null;
+
+            if (TotalPhases > 0)
+            {
+                Bus<EnemyPhaseChangedEvent>.Raise(new EnemyPhaseChangedEvent(_battleEnemy, CurrentPhaseNum, TotalPhases));
             }
         }
 
@@ -58,7 +63,7 @@ namespace PSB.Code.BattleCode.Enemies
         {
             if (_entityHealth != null)
             {
-                _entityHealth.OnHealthChangeEvent -= HandleHealthChanged;
+                _entityHealth.OnTotalHealthChangeEvent -= HandleHealthChanged;
             }
         }
 
@@ -67,18 +72,34 @@ namespace PSB.Code.BattleCode.Enemies
             if (max <= 0 || _battleEnemy.IsDead) return;
 
             float currentPercent = current / max;
+            bool phaseChangedThisHit = false;
 
             while (_currentPhaseIndex < _sortedPhases.Count)
             {
-                if (currentPercent <= _sortedPhases[_currentPhaseIndex].hpThresholdPercent)
+                float targetThreshold = _sortedPhases[_currentPhaseIndex].hpThresholdPercent;
+
+                if (currentPercent <= targetThreshold)
                 {
-                    ExecutePhaseAction(_sortedPhases[_currentPhaseIndex]);
-                    _currentPhaseIndex++;
+                    while (_currentPhaseIndex < _sortedPhases.Count && 
+                           Mathf.Approximately(_sortedPhases[_currentPhaseIndex].hpThresholdPercent, targetThreshold))
+                    {
+                        var phaseData = _sortedPhases[_currentPhaseIndex];
+                        _currentPhaseIndex++;
+                        ExecutePhaseAction(phaseData);
+                    }
+
+                    _currentUIPhaseIndex++;
+                    phaseChangedThisHit = true;
                 }
                 else
                 {
                     break; 
                 }
+            }
+
+            if (phaseChangedThisHit && TotalPhases > 0)
+            {
+                Bus<EnemyPhaseChangedEvent>.Raise(new EnemyPhaseChangedEvent(_battleEnemy, CurrentPhaseNum, TotalPhases));
             }
         }
 
@@ -90,7 +111,6 @@ namespace PSB.Code.BattleCode.Enemies
                     if (_enemyAttack != null && phaseData.phaseSkills != null && phaseData.phaseSkills.Length > 0)
                     {
                         _enemyAttack.SetAttackSkills(phaseData.phaseSkills);
-                        Bus<EnemySkillsChangedEvent>.Raise(new EnemySkillsChangedEvent(_battleEnemy, phaseData.phaseSkills));
                     }
                     break;
 
@@ -111,10 +131,6 @@ namespace PSB.Code.BattleCode.Enemies
                     if (phaseData.phaseEnemies != null && phaseData.phaseEnemies.Length > 0)
                     {
                         Bus<SpawnAdditionalEnemiesEvent>.Raise(new SpawnAdditionalEnemiesEvent(phaseData.phaseEnemies));
-                    }
-                    else
-                    {
-                        Debug.LogWarning("[EnemyPhaseController] 소환할 적 데이터가 비어있습니다.");
                     }
                     break;
             }

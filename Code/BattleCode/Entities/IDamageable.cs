@@ -1,5 +1,4 @@
-﻿
-using YIS.Code.UI;
+﻿using YIS.Code.Combat;
 
 namespace PSB.Code.BattleCode.Entities
 {

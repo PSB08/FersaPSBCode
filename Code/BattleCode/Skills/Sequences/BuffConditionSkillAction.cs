@@ -1,8 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using CIW.Code;
 using Work.YIS.Code.Buffs;
 using YIS.Code.Modules;
 using YIS.Code.Skills.Sequences;
+using Random = UnityEngine.Random;
 
 namespace PSB.Code.BattleCode.Skills.Sequences
 {
@@ -18,8 +20,11 @@ namespace PSB.Code.BattleCode.Skills.Sequences
         private Entity _target;
         private BuffConditionType _conditionType;
         private BuffType _specificBuffType;
-        private ISkillAction _onTrueAction;
+        
+        private ISkillAction[] _onTrueActions;
         private ISkillAction _onFalseAction;
+        
+        private Func<BuffType, ISkillAction[]> _onTrueDynamicActions;
 
         public BuffConditionSkillAction(Entity target, BuffConditionType conditionType, 
             BuffType specificBuffType, ISkillAction onTrueAction, ISkillAction onFalseAction = null)
@@ -27,8 +32,16 @@ namespace PSB.Code.BattleCode.Skills.Sequences
             _target = target;
             _conditionType = conditionType;
             _specificBuffType = specificBuffType;
-            _onTrueAction = onTrueAction;
+            _onTrueActions = onTrueAction != null ? new ISkillAction[] { onTrueAction } : null;
             _onFalseAction = onFalseAction;
+        }
+
+        public BuffConditionSkillAction(Entity target, BuffConditionType conditionType, 
+            Func<BuffType, ISkillAction[]> onTrueDynamicActions)
+        {
+            _target = target;
+            _conditionType = conditionType;
+            _onTrueDynamicActions = onTrueDynamicActions;
         }
 
         public async Task ExecuteAsync()
@@ -37,18 +50,21 @@ namespace PSB.Code.BattleCode.Skills.Sequences
 
             BuffModule buffModule = _target.GetModule<BuffModule>();
             bool isConditionMet = false;
+            BuffType foundBuffType = (BuffType)0;
 
             if (buffModule != null)
             {
                 var activeBuffs = buffModule.GetRawActiveBuffs();
                 
-                if (_conditionType == BuffConditionType.HasAnyBuff)
+                if (_conditionType == BuffConditionType.HasAnyBuff && activeBuffs.Count > 0)
                 {
-                    isConditionMet = activeBuffs.Count > 0;
+                    isConditionMet = true;
+                    int randomIndex = Random.Range(0, activeBuffs.Count);
+                    foundBuffType = (BuffType)activeBuffs[randomIndex].BuffKey;
                 }
-                else if (_conditionType == BuffConditionType.HasNoBuff)
+                else if (_conditionType == BuffConditionType.HasNoBuff && activeBuffs.Count == 0)
                 {
-                    isConditionMet = activeBuffs.Count == 0;
+                    isConditionMet = true;
                 }
                 else if (_conditionType == BuffConditionType.HasSpecificBuff)
                 {
@@ -57,19 +73,38 @@ namespace PSB.Code.BattleCode.Skills.Sequences
                         if (buff.BuffKey == (int)_specificBuffType)
                         {
                             isConditionMet = true;
+                            foundBuffType = _specificBuffType;
                             break;
                         }
                     }
                 }
             }
 
-            if (isConditionMet && _onTrueAction != null)
+            if (isConditionMet)
             {
-                await _onTrueAction.ExecuteAsync();
+                if (_onTrueActions != null)
+                {
+                    foreach (var action in _onTrueActions)
+                    {
+                        if (action != null) await action.ExecuteAsync();
+                    }
+                }
+
+                if (_onTrueDynamicActions != null)
+                {
+                    var dynamicActions = _onTrueDynamicActions(foundBuffType);
+                    foreach (var action in dynamicActions)
+                    {
+                        if (action != null) await action.ExecuteAsync();
+                    }
+                }
             }
-            else if (!isConditionMet && _onFalseAction != null)
+            else
             {
-                await _onFalseAction.ExecuteAsync();
+                if (_onFalseAction != null)
+                {
+                    await _onFalseAction.ExecuteAsync();
+                }
             }
         }
         

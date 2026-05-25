@@ -20,6 +20,8 @@ namespace Work.PSB.Code.FieldCode
         [SerializeField] private BattlePresentationSO battlePresentation;
         [SerializeField] private BattleEnterContextSO enterContext;
 
+        [SerializeField] private bool isDummyBattle = false;
+        
         [Header("연속전투 설정")]
         [SerializeField] private float linkRadius = 4f;
         [SerializeField] private LayerMask enemyLayer;
@@ -190,7 +192,7 @@ namespace Work.PSB.Code.FieldCode
 
             combinedEncounter.phases = allPhases.ToArray();
 
-            BattleContext.Set(SceneManager.GetActiveScene().name, involvedEnemyIDs);
+            BattleContext.Set(SceneManager.GetActiveScene().name, involvedEnemyIDs, isDummyBattle);
             
             BattleRuntimeData.Set(combinedEncounter, battlePresentation);
 

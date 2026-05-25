@@ -2,7 +2,6 @@
 using Code.Scripts.Entities;
 using PSB.Code.BattleCode.Enemies;
 using PSB.Code.BattleCode.Entities;
-using PSB.Code.BattleCode.Skills;
 using PSB_Lib.ObjectPool.RunTime;
 using PSB_Lib.StatSystem;
 using PSW.Code.EventBus;
@@ -11,7 +10,7 @@ using System.Collections.Generic;
 using PSB.Code.BattleCode.Skills.Interfaces;
 using UnityEngine;
 using Work.YIS.Code.Skills;
-using YIS.Code.UI;
+using YIS.Code.Combat;
 using YIS.Code.CoreSystem;
 using YIS.Code.Defines;
 using YIS.Code.Events;

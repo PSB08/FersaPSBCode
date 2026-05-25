@@ -58,7 +58,7 @@ namespace Work.PSB.Code.CoreSystem.UpgradeSystem
         public bool TryResetAllUpgrades(UpgradeDefSO[] defs, ItemType costType, int cost)
         {
             if (defs == null || _stat == null) return false;
-
+            
             if (cost > 0)
             {
                 if (!CurrencyContainer.Spend(costType, cost))

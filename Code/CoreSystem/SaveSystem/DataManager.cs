@@ -64,6 +64,11 @@ namespace PSB.Code.CoreSystem.SaveSystem
 
         private void HandleResetAllPrefEvent(ResetAllPrefEvent evt)
         {
+            ResetData();
+        }
+
+        public void ResetData()
+        {
             PlayerPrefs.DeleteKey(saveCacheKey);
             PlayerPrefs.Save();
 

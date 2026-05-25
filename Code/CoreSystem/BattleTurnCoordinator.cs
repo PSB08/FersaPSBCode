@@ -32,6 +32,15 @@ namespace Work.PSB.Code.CoreSystem
             StartCoroutine(Co_StartTurnWhenReady());
         }
 
+        private void OnDestroy()
+        {
+            if (tm != null)
+            {
+                tm.OnTurnStarted -= TurnStartEvent;
+                tm.OnTurnEnded -= TurnEndEvent;
+            }
+        }
+
         private IEnumerator Co_StartTurnWhenReady()
         {
             if (enterContext == null)
@@ -62,22 +71,33 @@ namespace Work.PSB.Code.CoreSystem
             if(isEnemyAllDead)
             {
                 tm.SetEnemyTurn();
-                yield break;
             }
             Bus<OnBattleStart>.Raise(new OnBattleStart(_playerManager.BattlePlayer, em.GetEnemies()));
 
             yield return new WaitForSeconds(0.5f);
             //_playerManager.BattlePlayer.GetModule<EntityStat>().TryGetStat("PlayerTurnProbility", out StatSO turnProbility);
 
+            tm.OnTurnStarted += TurnStartEvent;
+            tm.OnTurnEnded += TurnEndEvent;                                
+
             bool isPlayerTurn = RandomTurn(50);
             StartCoroutine(turnCoinToss.ShowTurnTextAction(isPlayerTurn));
-
-
-
-            
-
-
         }
+
+
+
+        private void TurnStartEvent(bool v)
+        {
+            if (v)
+                Bus<OnTurnStart>.Raise(new OnTurnStart(_playerManager.BattlePlayer, em.GetEnemies()));
+        }
+
+        private void TurnEndEvent(bool v)
+        {
+            if (v)
+                Bus<OnTurnEnd>.Raise(new OnTurnEnd(_playerManager.BattlePlayer, em.GetEnemies()));
+        }
+
         public bool RandomTurn(int v)
         {
             if (tm == null) throw new Exception();

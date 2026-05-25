@@ -41,7 +41,7 @@ namespace PSB.Code.BattleCode.Players
         {
             Bus<BattleEnd>.OnEvent += OnBattleEnd;
             PlayerHealthSave.OnResetRequested += HandleResetRequested;
-            Bus<HealRequest>.OnEvent += OnHealRequest;
+            Bus<HealRequest>.OnEvent += HandleHealRequest;
 
             _hasSaved = PlayerHealthSave.TryLoad(out _savedCur, out _savedMax);
             _restoreApplied = false;
@@ -62,7 +62,7 @@ namespace PSB.Code.BattleCode.Players
         {
             Bus<BattleEnd>.OnEvent -= OnBattleEnd;
             PlayerHealthSave.OnResetRequested -= HandleResetRequested;
-            Bus<HealRequest>.OnEvent -= OnHealRequest;
+            Bus<HealRequest>.OnEvent -= HandleHealRequest;
 
             if (_health != null && _subscribed)
             {
@@ -82,8 +82,7 @@ namespace PSB.Code.BattleCode.Players
         
         private void Update()
         {
-#if UNITY_EDITOR
-            
+            #if UNITY_EDITOR
             if (Keyboard.current.rKey.wasPressedThisFrame)
             {
                 PlayerHealthSave.Reset();
@@ -94,13 +93,13 @@ namespace PSB.Code.BattleCode.Players
                     PlayerHealthSave.SaveSnapshot(_health.CurrentHealth, _health.MaxHealth);
                 }
             }
-#endif
+
             if (Keyboard.current.f4Key.wasPressedThisFrame)
             {
                 Bus<HealRequest>.Raise(new HealRequest(0.2f, HealMode.MaxPercent));
             }
+            #endif
         }
-        
 
         private void HandleResetRequested()
         {
@@ -151,12 +150,17 @@ namespace PSB.Code.BattleCode.Players
             if (evt.IsVictory)
                 PlayerHealthSave.Flush();
         }
+
+        private void HandleHealRequest(HealRequest req)
+        {
+            OnHealRequest(req.value, req.mode);
+        }
         
-        private void OnHealRequest(HealRequest req)
+        private void OnHealRequest(float value, HealMode mode)
         {
             float beforeHealth = _health.CurrentHealth;
 
-            _health.Heal(req.value, req.mode);
+            _health.Heal(value, mode);
             
             float actualHealed = _health.CurrentHealth - beforeHealth;
             if (actualHealed <= 0f) return;
@@ -175,6 +179,13 @@ namespace PSB.Code.BattleCode.Players
             p.transform.localScale = Vector3.one * 0.7f;
             p.PlayClipEffect(targetPos, rot, Animator.StringToHash("SLASH"));
         }
-        
+
+        public bool TryHeal(float value, HealMode mode)
+        {
+            if (_health.CurrentHealth >= _health.MaxHealth) return false;
+            
+            OnHealRequest(value, mode);
+            return true;
+        }
     }
 }

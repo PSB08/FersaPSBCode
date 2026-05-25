@@ -9,7 +9,7 @@ using PSB.Code.BattleCode.Players;
 using PSW.Code.EventBus;
 using UnityEngine;
 using Work.YIS.Code.Skills;
-using YIS.Code.UI;
+using YIS.Code.Combat;
 using YIS.Code.CoreSystem;
 using YIS.Code.Defines;
 using YIS.Code.Events;

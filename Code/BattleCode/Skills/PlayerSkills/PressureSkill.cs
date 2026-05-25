@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using CIW.Code;
 using Work.YIS.Code.Buffs;
+using YIS.Code.Combat;
 using YIS.Code.Skills;
 using YIS.Code.Skills.Interfaces;
 using YIS.Code.Skills.Sequences;
-using YIS.Code.UI;
 
 namespace PSB.Code.BattleCode.Skills.PlayerSkills
 {

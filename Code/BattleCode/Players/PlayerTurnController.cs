@@ -44,7 +44,9 @@ namespace PSB.Code.BattleCode.Players
         public void OnStartTurn(bool isPlayerTurn)
         {
             if (!isPlayerTurn) return;
-            
+
+            _buffModule.UpdateTime();
+
             SetActiveForPlayerTurn(true);
 
             _combat?.OnPlayerTurnStarted();
@@ -56,7 +58,7 @@ namespace PSB.Code.BattleCode.Players
             if (!isPlayerTurn) return;
 
             SetActiveForPlayerTurn(false);
-            _buffModule.UpdateTime();
+            //_buffModule.UpdateTime();
         }
 
         private void SetActiveForPlayerTurn(bool active)

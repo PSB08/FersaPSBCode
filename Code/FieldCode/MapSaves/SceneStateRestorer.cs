@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using PSB.Code.BattleCode.Events;
+using PSB.Code.FieldCode.BTs.Events;
 using PSW.Code.EventBus;
 using PSW.Code.Talk;
 using UnityEngine;
@@ -31,93 +32,125 @@ namespace Work.PSB.Code.FieldCode.MapSaves
 
         private IEnumerator Start() 
         { 
-            string sceneName = SceneManager.GetActiveScene().name; 
-            var data = SceneSaveSystem.LoadScene(sceneName); 
+            string sceneName = SceneManager.GetActiveScene().name;
+            var data = SceneSaveSystem.LoadScene(sceneName);
             
             if (data == null)
             {
                 if (playerHandler != null)
                     playerHandler.ResetToInitial();
-                yield break;
             }
-            
-            if (playerHandler != null) 
-                playerHandler.LoadPlayer(data); 
-            
-            foreach (var enemy in enemyData) 
-                enemy.LoadEnemy(data); 
-            
-            if (gimmicks != null && data.gimmicks != null)
+            else
             {
-                foreach (var gimmick in gimmicks)
+                if (playerHandler != null)
+                    playerHandler.LoadPlayer(data);
+                
+                foreach (var enemy in enemyData)
+                    enemy.LoadEnemy(data);
+                BroadcastEnemyCount();
+                
+                if (gimmicks != null && data.gimmicks != null)
                 {
-                    if (gimmick == null || string.IsNullOrEmpty(gimmick.GimmickId)) 
-                        continue;
-                    
-                    bool isCleared = data.gimmicks.Exists(g => g.id == gimmick.GimmickId && g.isCleared);
-                    
-                    if (isCleared)
+                    foreach (var gimmick in gimmicks)
                     {
-                        gimmick.RestoreClearedState();
-                    }
-                }
-            }
-            
-            if (boxes != null && data.boxes != null)
-            {
-                foreach (var box in boxes)
-                {
-                    if (box == null) 
-                        continue;
-
-                    bool collected = data.boxes.Exists(b => b.id == box.BoxId && b.isCollected);
-                    
-                    if (collected)
-                        box.gameObject.SetActive(false);
-                }
-            }
-            
-            if (talkEntities != null && data.talks != null)
-            {
-                foreach (var talk in talkEntities)
-                {
-                    if (talk == null || string.IsNullOrEmpty(talk.TalkId)) 
-                        continue;
-                    
-                    bool isFinished = data.talks.Exists(t => t.id == talk.TalkId && t.isFinished);
-                    
-                    if (isFinished)
-                    {
-                        talk.IsFinished = true;
+                        if (gimmick == null || string.IsNullOrEmpty(gimmick.GimmickId))
+                            continue;
                         
-                        if (talk.DisableObjectAfterFinished)
+                        bool isCleared = data.gimmicks.Exists(g => g.id == gimmick.GimmickId && g.isCleared);
+                        
+                        if (isCleared)
                         {
-                            talk.gameObject.SetActive(false);
+                            gimmick.RestoreClearedState();
                         }
-                        else if (talk.DisableTalkAfterFinished)
+                    }
+                }
+                
+                if (boxes != null && data.boxes != null)
+                {
+                    foreach (var box in boxes)
+                    {
+                        if (box == null)
+                            continue;
+
+                        bool collected = data.boxes.Exists(b => b.id == box.BoxId && b.isCollected);
+                        
+                        if (collected)
+                            box.gameObject.SetActive(false);
+                    }
+                }
+                
+                if (talkEntities != null && data.talks != null)
+                {
+                    foreach (var talk in talkEntities)
+                    {
+                        if (talk == null || string.IsNullOrEmpty(talk.TalkId))
+                            continue;
+                        
+                        bool isFinished = data.talks.Exists(t => t.id == talk.TalkId && t.isFinished);
+                        
+                        if (isFinished)
                         {
-                            talk.DisableTalk();
+                            talk.IsFinished = true;
+                            
+                            if (talk.DisableObjectAfterFinished)
+                            {
+                                talk.gameObject.SetActive(false);
+                            }
+                            else if (talk.DisableTalkAfterFinished)
+                            {
+                                talk.DisableTalk();
+                            }
                         }
                     }
                 }
             }
-
+            
             yield return null;
-            CheckAllEnemiesDead(); 
+            CheckAllEnemiesDead();
         }
-
-        private void CheckAllEnemiesDead()
+        
+        public void BroadcastEnemyCount()
         {
             if (enemyData == null || enemyData.Length == 0)
+            {
                 return;
+            }
+
+            int totalCount = enemyData.Length;
+            int aliveCount = 0;
 
             foreach (var enemy in enemyData)
             {
                 if (enemy != null && enemy.IsAlive)
-                    return;
+                {
+                    aliveCount++;
+                }
+            }
+            
+            Bus<EnemyCountUpdateEvent>.Raise(new EnemyCountUpdateEvent(aliveCount, totalCount));
+        }
+
+        private void CheckAllEnemiesDead()
+        {
+            BroadcastEnemyCount();
+            
+            if (enemyData == null || enemyData.Length == 0)
+                return;
+
+            bool allDead = true;
+            foreach (var enemy in enemyData)
+            {
+                if (enemy != null && enemy.IsAlive)
+                {
+                    allDead = false;
+                    break;
+                }
             }
 
-            Bus<EnemyAllNotAlive>.Raise(new EnemyAllNotAlive());
+            if (allDead)
+            {
+                Bus<EnemyAllNotAlive>.Raise(new EnemyAllNotAlive());
+            }
         }
 
         #if  UNITY_EDITOR
