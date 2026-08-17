@@ -34,12 +34,19 @@ namespace Code.Scripts.Entities
 
         public void ForceChangeClip(AnimParamSO nextClip)
         {
-            InternalChangeClip(nextClip);
+            InternalChangeClip(nextClip, true);
+        }
+
+        public void RestartClip(AnimParamSO nextClip)
+        {
+            if (_clipLocked) return;
+            InternalChangeClip(nextClip, true);
         }
         
-        private void InternalChangeClip(AnimParamSO nextClip)
+        private void InternalChangeClip(AnimParamSO nextClip, bool forceRestart = false)
         {
-            if (_currClip == nextClip) return;
+            if (nextClip == null) return;
+            if (!forceRestart && _currClip == nextClip) return;
 
             _currClip = nextClip;
             animator.Play(_currClip.paramHash, -1, 0f);

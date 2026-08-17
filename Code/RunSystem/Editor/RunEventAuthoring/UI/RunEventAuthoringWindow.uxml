@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <ui:VisualElement name="window-root" class="window-root">
+        <uie:Toolbar name="main-toolbar" class="main-toolbar">
+            <ui:Label text="Run Event Editor" class="toolbar-title" />
+            <uie:ToolbarButton name="new-event-button" text="새 이벤트" />
+            <uie:ToolbarMenu name="duplicate-event-menu" text="복제" />
+            <uie:ToolbarButton name="rename-event-button" text="이름 변경" />
+            <ui:VisualElement class="toolbar-spacer" />
+            <uie:ToolbarButton name="reveal-button" text="위치 표시" />
+            <uie:ToolbarButton name="refresh-button" text="새로고침" />
+            <uie:ToolbarButton name="save-button" text="저장" />
+            <uie:ToolbarButton name="validate-button" text="전체 검사" class="primary-toolbar-button" />
+        </uie:Toolbar>
+
+        <ui:VisualElement class="workspace-row">
+            <ui:VisualElement name="browser-pane" class="browser-pane">
+                <ui:Label text="RUN EVENTS" class="pane-title" />
+                <uie:ToolbarSearchField name="event-search-field" class="event-search-field" />
+                <ui:VisualElement class="browser-filter-row">
+                    <ui:Toggle name="battle-filter-toggle" text="전투" />
+                    <ui:Toggle name="issue-filter-toggle" text="오류만" />
+                </ui:VisualElement>
+                <ui:ListView name="event-list" class="event-list" />
+                <ui:Label name="event-count-label" text="0 events" class="pane-footer" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="flow-pane" class="flow-pane">
+                <ui:VisualElement name="empty-flow" class="empty-state">
+                    <ui:Label text="RunEventSO를 선택하세요" class="empty-title" />
+                    <ui:Label text="왼쪽 목록에서 이벤트를 고르거나 새 이벤트를 생성할 수 있습니다." class="empty-description" />
+                </ui:VisualElement>
+                <ui:ScrollView name="flow-scroll" class="flow-scroll" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="detail-pane" class="detail-pane">
+                <ui:VisualElement class="detail-header">
+                    <ui:Label name="selected-object-title" text="상세 설정" class="pane-title" />
+                    <uie:ToolbarButton name="rename-selected-button" text="이름 변경" class="detail-header-button rename-detail-button" />
+                    <uie:ToolbarButton name="ping-selected-button" text="선택" class="detail-header-button" />
+                </ui:VisualElement>
+                <ui:ScrollView name="inspector-scroll" class="inspector-scroll" />
+                <ui:VisualElement name="validation-pane" class="validation-pane">
+                    <ui:VisualElement class="validation-header">
+                        <ui:Label text="검사 결과" class="pane-title" />
+                        <ui:Label name="validation-count-label" text="0" class="validation-count" />
+                    </ui:VisualElement>
+                    <ui:ListView name="validation-list" class="validation-list" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement class="status-bar">
+            <ui:Label name="status-label" text="준비됨" class="status-message" />
+            <ui:Label name="path-label" text="Assets/00.Work/PSB/08.SO" class="status-path" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

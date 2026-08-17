@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using PSB_Lib.Dependencies;
+using PSB.Code.BattleCode.Allies;
+using UnityEngine;
 using Work.CSH.Scripts.Interfaces;
 using Work.CSH.Scripts.Managers;
 using YIS.Code.Modules;
@@ -15,6 +17,8 @@ namespace PSB.Code.BattleCode.Players
         private PlayerCombatController _combat;
         private BuffModule _buffModule;
 
+        [Inject] private BattleAllyManager _allyManager;
+
         public void Initialize(ModuleOwner owner)
         {
             _player = owner as BattlePlayer;
@@ -26,7 +30,7 @@ namespace PSB.Code.BattleCode.Players
 
             TurnManager = _player.TurnManager;
             _selector = _player.GetModule<PlayerTargetSelector>();
-            _combat   = _player.GetModule<PlayerCombatController>();
+            _combat = _player.GetModule<PlayerCombatController>();
             _buffModule = _player.GetModule<BuffModule>();
 
             if (TurnManager != null)
@@ -46,6 +50,11 @@ namespace PSB.Code.BattleCode.Players
             if (!isPlayerTurn) return;
 
             _buffModule.UpdateTime();
+            if (_allyManager != null)
+            {
+                _allyManager.UpdateAllAllyBuffs();
+                _allyManager.ArrangeDirtyAlliesForPlayerTurn();
+            }
 
             SetActiveForPlayerTurn(true);
 

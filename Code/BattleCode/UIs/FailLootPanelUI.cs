@@ -1,5 +1,5 @@
 ﻿using System.Collections;
-using DG.Tweening;
+using System;
 using UnityEngine;
 using Work.PSB.Code.CoreSystem;
 
@@ -14,6 +14,8 @@ namespace PSB.Code.BattleCode.UIs
         [SerializeField] private EndPanelSizeToggle_View sizeView;
 
         private bool _isShown;
+        private Action _exitOverride;
+        private Action _pendingExitOverride;
 
         private void Awake()
         {
@@ -53,18 +55,40 @@ namespace PSB.Code.BattleCode.UIs
 
         public void ExitBtn()
         {
+            if (!_isShown)
+                return;
+    
+            Action exitOverride = _exitOverride;
+            _exitOverride = null;
+    
             Hide();
-            Invoke(nameof(DoTransition), sizeModel.GetPopTime());
+    
+            if (exitOverride == null)
+            {
+                Invoke(nameof(DoTransition), sizeModel.GetPopTime());
+                return;
+            }
+    
+            _pendingExitOverride = exitOverride;
+            Invoke(nameof(DoExitOverride), sizeModel.GetPopTime());
+        }
+
+        private void DoExitOverride()
+        {
+            Action exitOverride = _pendingExitOverride;
+            _pendingExitOverride = null;
+            exitOverride?.Invoke();
         }
 
         private void DoTransition()
         {
+            controller.nextScene = "SW_Title";
             controller.Transition();
         }
-        
-        public void SetReturnScene(string sceneName)
+
+        public void SetExitOverride(Action exitOverride)
         {
-            controller.nextScene = sceneName;
+            _exitOverride = exitOverride;
         }
         
     }

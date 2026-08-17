@@ -47,7 +47,7 @@ namespace PSB.Code.BattleCode.UIs
         private EntityHealth _currentHealth;
         private BuffModule _currentBuffModule;
 
-        private Transform _currentBuffEventTarget;
+        private ModuleOwner _currentBuffEventTarget;
 
         private readonly List<GameObject> _spawnedStats = new();
         private readonly List<GameObject> _spawnedSkills = new();
@@ -86,14 +86,15 @@ namespace PSB.Code.BattleCode.UIs
             if (evt.Enemy == null) return;
 
             _currentEnemy = evt.Enemy;
-            Apply(_currentEnemy);
 
             if (root != null)
                 root.SetActive(true);
+
+            Apply(_currentEnemy);
         }
-
+        
         private void HandleClose(EnemyInfoCloseEvent evt) => Close();
-
+        
         private void Close()
         {
             UnbindHealth();
@@ -124,17 +125,19 @@ namespace PSB.Code.BattleCode.UIs
 
             EnemySO so = enemy.enemySO;
             if (so == null) return;
-
+            
             if (enemyIcon != null) enemyIcon.sprite = so.icon;
             if (enemyName != null) enemyName.text = so.enemyName;
-
+            
             _currentHealth = enemy.GetModule<EntityHealth>();
             if (_currentHealth != null && hpController != null)
             {
                 _currentHealth.OnHealthChangeEvent += HandleHealthChanged;
-                hpController.Init(_currentHealth.CurrentHealth, _currentHealth.MaxHealth, isLeft: false);
+                _currentHealth.OnShieldChangeEvent += HandleShieldChanged;
+                hpController.Init(_currentHealth.CurrentHealth, _currentHealth.MaxHealth,
+                    _currentHealth.CurrentShield, isLeft: false);
             }
-
+            
             var statComp = enemy.GetModule<EntityStat>();
             if (statComp != null)
             {
@@ -160,8 +163,12 @@ namespace PSB.Code.BattleCode.UIs
             _currentBuffModule = enemy.GetComponentInChildren<BuffModule>(true);
             if (_currentBuffModule != null)
             {
-                _currentBuffEventTarget = enemy.transform;
-                SyncBuffs(enemy);
+                _currentBuffEventTarget = _currentBuffModule.UiTarget;
+				
+                if (_currentBuffEventTarget == null)
+                    _currentBuffEventTarget = enemy;
+				
+                SyncBuffs(_currentBuffEventTarget);
             }
         }
 
@@ -260,24 +267,34 @@ namespace PSB.Code.BattleCode.UIs
             hpController.ChangeMaxHp(max);
             hpController.ChangeCurrentHp(current);
         }
-
+        
+        private void HandleShieldChanged(float shield)
+        {
+            if (hpController == null) return;
+            hpController.ChangeShield(shield);
+        }
+        
         private void UnbindHealth()
         {
             if (_currentHealth != null)
+            {
                 _currentHealth.OnHealthChangeEvent -= HandleHealthChanged;
+                _currentHealth.OnShieldChangeEvent -= HandleShieldChanged;
+            }
+            
             _currentHealth = null;
         }
-
+        
         private void SpawnStatLine(StatSO stat, int value)
         {
             if (statLinePrefab == null || statRoot == null) return;
-
+            
             var line = Instantiate(statLinePrefab, statRoot);
             _spawnedStats.Add(line.gameObject);
-
+            
             line.Set(stat, value, statNamePanel);
         }
-
+        
         private void ClearSpawnedStats()
         {
             for (int i = 0; i < _spawnedStats.Count; i++)
@@ -303,4 +320,5 @@ namespace PSB.Code.BattleCode.UIs
         }
         
     }
+
 }

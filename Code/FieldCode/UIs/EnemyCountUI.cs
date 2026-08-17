@@ -2,11 +2,13 @@
 using PSW.Code.EventBus;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Work.PSB.Code.FieldCode.UIs
 {
     public class EnemyCountUI : MonoBehaviour
     {
+        [SerializeField] private RawImage image;
         [SerializeField] private TextMeshProUGUI countText;
 
         private void OnEnable()
@@ -23,8 +25,16 @@ namespace Work.PSB.Code.FieldCode.UIs
         {
             if (countText != null)
             {
-                var s = evt.TotalCount != 0 ? $"남은 적 : {evt.AliveCount} / {evt.TotalCount}" : string.Empty;
-                countText.text = s;
+                if (evt.TotalCount != 0)
+                {
+                    image.gameObject.SetActive(true);
+                    var s = evt.TotalCount != 0 ? $"남은 적 : {evt.AliveCount} / {evt.TotalCount}" : string.Empty;
+                    countText.text = s;
+                }
+                else
+                {
+                    image.gameObject.SetActive(false);
+                }
             }
         }
         

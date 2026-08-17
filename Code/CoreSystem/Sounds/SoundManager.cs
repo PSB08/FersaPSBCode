@@ -37,32 +37,44 @@ namespace Work.PSB.Code.CoreSystem.Sounds
             {
                 if (_lastPlayTimeDict.TryGetValue(evt.clip.clip, out float lastPlayTime))
                 {
-                    if (Time.time - lastPlayTime < sameSoundCool)
+                    if (Time.unscaledTime - lastPlayTime < sameSoundCool)
                     {
                         return; 
                     }
                 }
+
                 _lastPlayTimeDict[evt.clip.clip] = Time.time;
             }
 
             SoundPlayer player = _poolManager.Pop<SoundPlayer>(soundPlayer);
-            player.transform.position = evt.position;
+            player.transform.position = GetSoundPosition(evt.position);
             player.PlaySound(evt.clip);
 
             if (evt.channel > 0 && evt.clip.loop)
             {
                 if (_soundPlayerDict.TryGetValue(evt.channel, out SoundPlayer beforePlayer))
                 {
-                    Debug.Log($"beforePlayer : {beforePlayer}");
                     beforePlayer.StopAndGotoPool();
                     _soundPlayerDict.Remove(evt.channel);
                 }
+
                 _soundPlayerDict.Add(evt.channel, player);
             }
             else if (evt.channel <= 0 && evt.clip.loop)
             {
                 Debug.LogWarning($"사운드 루프 설정이 되었으나 채널이 0 이하입니다. {evt.clip.name}");
             }
+        }
+
+        private Vector3 GetSoundPosition(Vector3 position)
+        {
+            AudioListener listener = FindAnyObjectByType<AudioListener>();
+
+            if (listener == null)
+                return position;
+
+            position.z = listener.transform.position.z;
+            return position;
         }
 
         private void HandleStopSoundEvent(StopSoundEvent evt)

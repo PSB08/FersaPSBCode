@@ -85,10 +85,20 @@ namespace PSB.Code.CoreSystem.SaveSystem
 
         private void HandleSavePrefEvent(SavePrefEvent evt)
         {
-            string dataJson = GetDataToJson();
-            PlayerPrefs.SetString(saveCacheKey, dataJson);
-            Debug.Log(dataJson);
-            evt.Callback?.Invoke();
+            try
+            {
+                string dataJson = GetDataToJson();
+                PlayerPrefs.SetString(saveCacheKey, dataJson);
+                Debug.Log(dataJson);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"SavePrefEvent 저장 중 예외 발생: {e}");
+            }
+            finally
+            {
+                evt.Callback?.Invoke();
+            }
         }
 
         private string GetDataToJson()
@@ -100,7 +110,16 @@ namespace PSB.Code.CoreSystem.SaveSystem
 
             foreach (ISaveable target in targetObjects)
             {
-                toSaveData.Add(new SaveData {SaveId = target.SaveId.ID, Data = target.GetSaveData() });
+                int saveId = target.SaveId != null ? target.SaveId.ID : -1;
+
+                try
+                {
+                    toSaveData.Add(new SaveData {SaveId = saveId, Data = target.GetSaveData() });
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"SaveId {saveId} 저장 중 예외 발생: {e}");
+                }
             }
             toSaveData.AddRange(_unUsedData);
             DataCollection collection = new DataCollection {Data = toSaveData};

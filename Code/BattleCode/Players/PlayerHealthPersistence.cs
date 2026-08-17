@@ -1,10 +1,11 @@
-﻿using System.Collections;
-using CIW.Code.System.Events;
-using PSB_Lib.Dependencies;
-using PSB_Lib.ObjectPool.RunTime;
+﻿using CIW.Code.System.Events;
 using PSB.Code.BattleCode.Entities;
 using PSB.Code.BattleCode.Events;
+using PSB_Lib.Dependencies;
+using PSB_Lib.ObjectPool.RunTime;
 using PSW.Code.EventBus;
+using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using YIS.Code.Effects;
@@ -163,6 +164,7 @@ namespace PSB.Code.BattleCode.Players
             _health.Heal(value, mode);
             
             float actualHealed = _health.CurrentHealth - beforeHealth;
+            actualHealed = MathF.Round(actualHealed, 1);
             if (actualHealed <= 0f) return;
             
             Bus<HealTextUiEvent>.Raise(new HealTextUiEvent(transform.position, actualHealed));

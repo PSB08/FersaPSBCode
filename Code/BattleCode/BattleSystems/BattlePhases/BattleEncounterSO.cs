@@ -1,10 +1,11 @@
 ﻿using UnityEngine;
+using PSB.Code.BattleCode.Enemies;
 
 namespace PSB.Code.BattleCode.BattleSystems.BattlePhases
 {
-    [CreateAssetMenu(fileName = "NewBattlePhaseData", menuName = "SO/Battle/BattlePhaseData", order = 100)]
+    [CreateAssetMenu(fileName = "NewBattleEncounter", menuName = "SO/Battle/BattleEncounter", order = 100)]
     public class BattleEncounterSO : ScriptableObject
     {
-        public BattlePhaseData[] phases;
+        public EnemySO[] enemies;
     }
 }

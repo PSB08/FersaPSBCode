@@ -1,9 +1,11 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using PSB.Code.BattleCode.UIs;
+using PSW.Code.EventBus;
 using UnityEngine;
 using UnityEngine.Events;
 using Work.PSB.Code.CoreSystem;
+using Work.PSB.Code.CoreSystem.Sounds;
 using YIS.Code.Modules;
 
 namespace Work.PSB.Code.FieldCode
@@ -15,27 +17,30 @@ namespace Work.PSB.Code.FieldCode
         [SerializeField] private string playerTag = "Player";
         [SerializeField] private BattleEnterContextSO enterContext;
         [SerializeField] private LayerMask playerLayer;
-        
+
         [SerializeField] private EnemyDetectUI detectionUI;
 
-        public UnityEvent OnDetectConfirmed;
+        [Header("SFX")]
+        [SerializeField] private SoundSO enemyEnterSound;
+
+        public UnityEvent OnDetectConfirmed = new UnityEvent();
 
         private bool _playerDetected = false;
         private bool _isDetecting = false;
         private bool _battleEnterRaised = false;
-        
+
         private FieldEnemyAngle _view;
         private CancellationTokenSource _detectCTS;
         private HitMessageEffect _hitMessageEffect;
         private ContactFilter2D _contactFilter2D;
-        
+
         private float _lostTimer = 0f;
         private readonly float _lostDelay = 0.2f;
 
         public Transform CurrentTarget { get; private set; }
         public bool PlayerDetected => _playerDetected;
         public bool IsDetecting => _isDetecting;
-        
+
         private Collider2D[] _hitColliders = new Collider2D[16];
 
         public void Initialize(ModuleOwner owner)
@@ -46,7 +51,7 @@ namespace Work.PSB.Code.FieldCode
         {
             _view = GetComponent<FieldEnemyAngle>();
             _hitMessageEffect = FindAnyObjectByType<HitMessageEffect>();
-            
+
             _contactFilter2D = new ContactFilter2D();
             _contactFilter2D.useLayerMask = true;
             _contactFilter2D.SetLayerMask(playerLayer);
@@ -55,7 +60,8 @@ namespace Work.PSB.Code.FieldCode
 
         private void Start()
         {
-            OnDetectConfirmed.AddListener(_hitMessageEffect.Play);
+            if (_hitMessageEffect != null)
+                OnDetectConfirmed.AddListener(_hitMessageEffect.Play);
         }
 
         private void Update()
@@ -67,16 +73,19 @@ namespace Work.PSB.Code.FieldCode
                     ResetDetection();
                     CurrentTarget = null;
                 }
-                return; 
+
+                return;
             }
 
             DetectTargets();
         }
-        
+
         private void OnDisable()
         {
             StopDetectionInternal();
-            OnDetectConfirmed.RemoveListener(_hitMessageEffect.Play);
+
+            if (_hitMessageEffect != null)
+                OnDetectConfirmed.RemoveListener(_hitMessageEffect.Play);
         }
 
         private void OnDestroy()
@@ -94,9 +103,7 @@ namespace Work.PSB.Code.FieldCode
             }
 
             _isDetecting = false;
-            
             _playerDetected = false;
-
             _battleEnterRaised = false;
 
             if (_view != null)
@@ -104,20 +111,26 @@ namespace Work.PSB.Code.FieldCode
                 _view.ResetDetectProgress();
                 _view.SetDetecting(false);
             }
-            
-            if (detectionUI != null) detectionUI.Hide();
+
+            if (detectionUI != null)
+                detectionUI.Hide();
         }
 
         public bool IsPlayerInSight(out Transform player)
         {
             player = null;
 
-            int hitCount = Physics2D.OverlapCircle(transform.position,
-                _view.ViewDistance, _contactFilter2D, _hitColliders);
+            int hitCount = Physics2D.OverlapCircle(
+                transform.position,
+                _view.ViewDistance,
+                _contactFilter2D,
+                _hitColliders
+            );
 
             for (int i = 0; i < hitCount; i++)
             {
                 var hit = _hitColliders[i];
+
                 if (hit.CompareTag(playerTag) && IsInView(hit.transform.position))
                 {
                     Vector2 dir = (hit.transform.position - transform.position).normalized;
@@ -145,9 +158,9 @@ namespace Work.PSB.Code.FieldCode
             if (found)
             {
                 CurrentTarget = player;
-                
+
                 _lostTimer = 0f;
-                
+
                 if (_playerDetected)
                     return;
 
@@ -157,7 +170,7 @@ namespace Work.PSB.Code.FieldCode
                     _isDetecting = true;
 
                     _view.ResetDetectProgress();
-                    _view.SetDetecting(true); 
+                    _view.SetDetecting(true);
 
                     _ = StartDetectSequence(_detectCTS.Token);
                 }
@@ -170,8 +183,9 @@ namespace Work.PSB.Code.FieldCode
                 if (_lostTimer >= _lostDelay)
                 {
                     ResetDetection();
-                    
-                    if (detectionUI != null) detectionUI.Hide();
+
+                    if (detectionUI != null)
+                        detectionUI.Hide();
                 }
             }
         }
@@ -179,8 +193,9 @@ namespace Work.PSB.Code.FieldCode
         private async Task StartDetectSequence(CancellationToken token)
         {
             float elapsed = 0f;
-            
-            if (detectionUI != null) detectionUI.Show();
+
+            if (detectionUI != null)
+                detectionUI.Show();
 
             while (true)
             {
@@ -196,10 +211,10 @@ namespace Work.PSB.Code.FieldCode
 
                 if (elapsed >= detectDelay)
                 {
-                    // 이 프레임에 바로 확정
                     _view.SetDetectProgress(1f);
 
                     Debug.Log($"[Sensor] PlayerDetected TRUE frame={Time.frameCount}");
+
                     _playerDetected = true;
                     _isDetecting = false;
                     _view.SetDetecting(false);
@@ -207,16 +222,24 @@ namespace Work.PSB.Code.FieldCode
                     if (!_battleEnterRaised)
                     {
                         _battleEnterRaised = true;
+
                         Debug.Log("Enemy detect and battle enter");
-                        enterContext.Set(BattleEnterBy.Enemy);
+
+                        if (enterContext != null)
+                            enterContext.Set(BattleEnterBy.Enemy);
+
+                        PlaySfx(enemyEnterSound, transform.position);
                     }
 
                     return;
                 }
 
                 float p = elapsed / detectDelay;
+
                 _view.SetDetectProgress(p);
-                if (detectionUI != null) detectionUI.UpdateProgress(p);
+
+                if (detectionUI != null)
+                    detectionUI.UpdateProgress(p);
 
                 await Task.Yield();
             }
@@ -246,6 +269,15 @@ namespace Work.PSB.Code.FieldCode
 
             _view.ResetDetectProgress();
             _view.SetDetecting(false);
+        }
+
+        private void PlaySfx(SoundSO sound, Vector3 position)
+        {
+            if (sound == null || sound.clip == null)
+                return;
+
+            PlaySFXEvent soundEvt = SoundEvents.PlaySFXEvent.Initialize(position, sound);
+            Bus<PlaySFXEvent>.Raise(soundEvt);
         }
         
     }

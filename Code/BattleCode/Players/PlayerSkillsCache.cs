@@ -1,4 +1,4 @@
-﻿using PSB.Code.BattleCode.Skills;
+using PSB.Code.BattleCode.Skills;
 using UnityEngine;
 using Work.YIS.Code.Skills;
 using YIS.Code.Skills;
@@ -18,11 +18,9 @@ namespace PSB.Code.BattleCode.Players
             return so != null;
         }
 
-        public bool TryGetOrCreate(SkillDataSO so, out BaseSkill skill)
+        public bool TryGetSkillData(SkillEnum id, out SkillDataSO so)
         {
-            skill = null;
-            if (so == null) return false;
-            return TryGetOrCreate((SkillEnum)so.index, so, out skill);
+            return TryResolveSO(id, out so);
         }
 
         public void SetActive(SkillDataSO so, bool active)
@@ -30,6 +28,5 @@ namespace PSB.Code.BattleCode.Players
             if (so == null) return;
             SetActive((SkillEnum)so.index, active);
         }
-        
     }
 }

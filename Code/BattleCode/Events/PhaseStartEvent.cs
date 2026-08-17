@@ -3,29 +3,13 @@ using PSW.Code.EventBus;
 
 namespace PSB.Code.BattleCode.Events
 {
-    public struct PhaseStartEvent : IEvent
+    public struct BattleEncounterStartEvent : IEvent
     {
-        public int PhaseIndex;
-        public int TotalPhases;
-        public EnemySO[] PhaseEnemies;
+        public EnemySO[] Enemies;
 
-        public PhaseStartEvent(int index, int total, EnemySO[] enemies)
+        public BattleEncounterStartEvent(EnemySO[] enemies)
         {
-            PhaseIndex = index;
-            TotalPhases = total;
-            PhaseEnemies = enemies;
-        }
-    }
-    
-    public struct PhaseClearEvent : IEvent { }
-    
-    public struct SpawnAdditionalEnemiesEvent : IEvent
-    {
-        public EnemySO[] EnemiesToSpawn;
-
-        public SpawnAdditionalEnemiesEvent(EnemySO[] enemies)
-        {
-            EnemiesToSpawn = enemies;
+            Enemies = enemies;
         }
     }
     

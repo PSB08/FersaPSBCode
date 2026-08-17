@@ -16,51 +16,26 @@ namespace Work.PSB.Code.FieldCode.UI
 
         [Inject] private BattleEnemyManager _enemyManager;
 
-        private int _currentPhaseIndex = 0;
-        private int _totalPhases = 1;
-        
-        private int _totalEnemiesAllPhases = 0;
-        private int _totalSpawnedUpToCurrent = 0;
+        private int _totalEnemies = 0;
 
         private void Awake()
         {
-            Bus<PhaseStartEvent>.OnEvent += OnPhaseStart;
+            if (phaseText != null)
+                phaseText.gameObject.SetActive(false);
+
+            Bus<BattleEncounterStartEvent>.OnEvent += OnBattleStart;
             Bus<EnemyListChanged>.OnEvent += OnEnemyListChanged;
         }
 
         private void OnDestroy()
         {
-            Bus<PhaseStartEvent>.OnEvent -= OnPhaseStart;
+            Bus<BattleEncounterStartEvent>.OnEvent -= OnBattleStart;
             Bus<EnemyListChanged>.OnEvent -= OnEnemyListChanged;
         }
 
-        private void OnPhaseStart(PhaseStartEvent evt)
+        private void OnBattleStart(BattleEncounterStartEvent evt)
         {
-            _currentPhaseIndex = evt.PhaseIndex + 1; 
-            _totalPhases = evt.TotalPhases;
-
-            _totalEnemiesAllPhases = 0;
-            _totalSpawnedUpToCurrent = 0;
-
-            if (BattleRuntimeData.EncounterData != null)
-            {
-                for (int i = 0; i < BattleRuntimeData.EncounterData.phases.Length; i++)
-                {
-                    int phaseEnemyCount = BattleRuntimeData.EncounterData.phases[i].enemies.Length;
-                    _totalEnemiesAllPhases += phaseEnemyCount;
-                    
-                    if (i <= evt.PhaseIndex)
-                    {
-                        _totalSpawnedUpToCurrent += phaseEnemyCount;
-                    }
-                }
-            }
-            else
-            {
-                _totalEnemiesAllPhases = evt.PhaseEnemies.Length;
-                _totalSpawnedUpToCurrent = evt.PhaseEnemies.Length;
-            }
-
+            _totalEnemies = evt.Enemies != null ? evt.Enemies.Length : 0;
             UpdateUI();
         }
 
@@ -71,11 +46,6 @@ namespace Work.PSB.Code.FieldCode.UI
 
         private void UpdateUI()
         {
-            if (phaseText != null)
-            {
-                phaseText.text = $"Phase {_currentPhaseIndex} / {_totalPhases}";
-            }
-
             if (enemyCountText != null)
             {
                 int aliveCount = 0;
@@ -90,10 +60,10 @@ namespace Work.PSB.Code.FieldCode.UI
                     }
                 }
 
-                int killedCount = _totalSpawnedUpToCurrent - aliveCount;
+                int killedCount = _totalEnemies - aliveCount;
                 if (killedCount < 0) killedCount = 0;
 
-                enemyCountText.text = $"Enemies : {killedCount} / {_totalEnemiesAllPhases}";
+                enemyCountText.text = $"Enemies : {killedCount} / {_totalEnemies}";
             }
         }
         

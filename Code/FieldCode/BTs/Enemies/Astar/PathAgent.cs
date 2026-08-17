@@ -10,6 +10,9 @@ namespace Code.Scripts.Enemies.Astar
 
         public int GetPath(Vector3Int startPosition, Vector3Int destination, Vector3[] pointArr)
         {
+            if (bakedData == null || pointArr == null || pointArr.Length == 0)
+                return 0;
+
             // 전체 경로 노드 리스트 계산
             List<AStarNode> result = CalculatePath(startPosition, destination);
             int cornerIndex = 0;
@@ -23,7 +26,7 @@ namespace Code.Scripts.Enemies.Astar
                 // 중간 코너 지점들 추출
                 for (int i = 1; i < result.Count - 1; i++)
                 {
-                    if(cornerIndex >= pointArr.Length) break;
+                    if(cornerIndex >= pointArr.Length - 1) break;
                     
                     // 이전 방향
                     Vector3Int beforeDirection = result[i].cellPosition - result[ i - 1 ].cellPosition;
@@ -39,8 +42,11 @@ namespace Code.Scripts.Enemies.Astar
                 }
                 
                 // 마지막 지점(목적지)
-                pointArr[cornerIndex] = result[^1].worldPosition; 
-                cornerIndex++;
+                if (cornerIndex < pointArr.Length && pointArr[cornerIndex - 1] != result[^1].worldPosition)
+                {
+                    pointArr[cornerIndex] = result[^1].worldPosition;
+                    cornerIndex++;
+                }
             }
             
             // 반환값: 경로에 들어간 포인트 개수
@@ -55,6 +61,9 @@ namespace Code.Scripts.Enemies.Astar
             List<AStarNode> path = new List<AStarNode>();  // 최종 경로
             
             bool result = false;
+
+            if (bakedData == null)
+                return path;
 
             // 시작/목표 노드 데이터 가져오기 실패 시 빈 경로 반환
             if (!bakedData.TryGetNode(start, out NodeData startNodeData))

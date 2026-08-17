@@ -10,11 +10,11 @@ namespace PSB.Code.BattleCode.Enemies.BTs.Conditions
     public partial class IsMeleeEnemyCondition : Condition
     {
         [SerializeReference] public BlackboardVariable<EnemyAttack> Attack;
-
+        
         public override bool IsTrue()
         {
-            return Attack.Value.IsMelee;
+            return Attack?.Value != null && Attack.Value.IsMelee;
         }
-       
+        
     }
 }

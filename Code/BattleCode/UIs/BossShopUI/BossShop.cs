@@ -9,6 +9,8 @@ namespace PSB.Code.BattleCode.UIs.BossShopUI
 {
     public class BossShop : MonoBehaviour, IInteractable
     {
+        [field: SerializeField] public Transform InteractUITrm { get; private set; }
+        [field: SerializeField] public bool CanUIShow { get; private set; } = true;
         [field: SerializeField] public string Name { get; set; }
         public Transform Transform => transform;
         public void OnInteract()

@@ -1,0 +1,613 @@
+.window-root {
+    flex-grow: 1;
+    background-color: #202225;
+    color: #d7d9dc;
+} /*전체 배경을 어두운 회색으로 만들고 남는 공간을 모두 차지하게 설정*/
+
+.main-toolbar {
+    height: 34px;
+    min-height: 34px;
+    flex-shrink: 0;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: #111214;
+    background-color: #292c30;
+} /*높이 34px, 좌우 여백 8px, 아래 테두리를 가진 상단 툴바*/
+
+.toolbar-title {
+    min-width: 142px;
+    flex-shrink: 0;
+    -unity-font-style: bold;
+    color: #f1f2f3;
+} /*제목*/
+
+.toolbar-spacer {
+    flex-grow: 1;
+} /*왼쪽 버튼과 오른쪽 버튼 사이 빈 공간을 모두 차지*/
+
+.primary-toolbar-button {
+    background-color: #236b68;
+    color: #ffffff;
+} /*전체 검사 버튼을 청록색으로 강조*/
+
+
+.workspace-row {
+    flex-grow: 1;
+    flex-direction: row;
+    min-height: 340px;
+    min-width: 0;
+    overflow: hidden;
+} /*왼쪽·가운데·오른쪽 패널을 가로로 배치*/
+
+.browser-pane {
+    width: 250px;
+    min-width: 190px;
+    max-width: 330px;
+    flex-shrink: 1;
+    padding: 10px 8px 6px 8px;
+    border-right-width: 1px;
+    border-right-color: #111214;
+    background-color: #25272a;
+} /*기본 250px인 왼쪽 이벤트 목록*/
+
+.flow-pane {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 280px;
+    overflow: hidden;
+    background-color: #1d1f22;
+} /*남은 공간을 차지하는 가운데 영역*/
+
+.detail-pane {
+    width: 360px;
+    min-width: 280px;
+    max-width: 480px;
+    flex-shrink: 1;
+    overflow: hidden;
+    border-left-width: 1px;
+    border-left-color: #111214;
+    background-color: #25272a;
+} /*기본 360px인 오른쪽 Inspector 영역*/
+
+.pane-title {
+    height: 23px;
+    -unity-font-style: bold;
+    color: #f0f1f2;
+} /*각 패널 제목을 굵고 밝게 표시*/
+
+.event-search-field {
+    margin-top: 4px;
+    margin-bottom: 6px;
+} /*검색창 위아래 간격*/
+
+.browser-filter-row {
+    flex-direction: row;
+    min-height: 25px;
+    margin-bottom: 5px;
+} /*전투·오류 필터 Toggle을 가로로 배치*/
+
+.browser-filter-row > Toggle {
+    margin-right: 12px;
+} /*Toggle 사이 간격을 12px로 설정*/
+
+.event-list {
+    flex-grow: 1;
+    border-top-width: 1px;
+    border-top-color: #383b40;
+} /*남은 높이를 차지하는 이벤트 목록*/
+
+.event-row {
+    height: 54px;
+    min-height: 54px;
+    flex-direction: row;
+    align-items: center;
+    padding-left: 5px;
+    padding-right: 5px;
+    border-bottom-width: 1px;
+    border-bottom-color: #36393d;
+} /*각 이벤트 행을 54px 고정 높이로 설정*/
+
+.event-thumbnail {
+    width: 38px;
+    height: 38px;
+    margin-right: 8px;
+    background-color: #161719;
+    -unity-background-scale-mode: scale-to-fit;
+} /*38×38 크기의 이벤트 Sprite 영역*/
+
+.event-row-text {
+    flex-grow: 1;
+    min-width: 0;
+} /*이름과 ID가 들어가는 가변 영역*/
+
+.event-row-name {
+    -unity-font-style: bold;
+    color: #e5e7e9;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+} /*굵은 이벤트 이름이며 길면 생략*/
+
+.event-row-id {
+    color: #969ba1;
+    font-size: 11px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+} /*작은 회색 글씨로 Talk ID와 Battle/Talk 종류를 표시*/
+
+.issue-badge {
+    min-width: 19px;
+    height: 19px;
+    margin-left: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    -unity-text-align: middle-center;
+    background-color: #9b493e;
+    color: #ffffff;
+    border-radius: 3px;
+} /*오류 개수를 붉은 배경의 작은 배지로 표시*/
+
+.pane-footer {
+    height: 22px;
+    padding-top: 4px;
+    color: #858a90;
+    font-size: 11px;
+} /*현재 표시 개수 / 전체 개수를 표시하는 하단 글자*/
+
+
+.empty-state {
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+} /*내용을 가운데 정렬하고 남은 공간을 모두 사용*/
+
+.empty-title {
+    -unity-font-style: bold;
+    font-size: 16px;
+    color: #d7d9dc;
+} /*제목*/
+
+.empty-description {
+    margin-top: 7px;
+    margin-left: 18px;
+    margin-right: 18px;
+    color: #8d9298;
+    white-space: normal;
+    -unity-text-align: middle-center;
+} /*선택 방법을 설명하는 안내 문장*/
+
+
+.flow-scroll {
+    flex-grow: 1;
+    min-width: 0;
+    padding: 14px 16px 20px 16px;
+} /*세로 스크롤을 사용하며 내부 여백을 설정*/
+
+.flow-header {
+    min-height: 62px;
+    flex-direction: row;
+    align-items: center;
+    padding-bottom: 10px;
+    margin-bottom: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: #3a3d42;
+} /*이벤트 이미지, 이름, 편집 버튼을 가로로 배치*/
+
+.flow-header-image {
+    width: 48px;
+    height: 48px;
+    margin-right: 10px;
+    background-color: #141517;
+    -unity-background-scale-mode: scale-to-fit;
+} /*이벤트 Sprite를 표시하는 48×48 영역*/
+
+.flow-header-text {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+} /*이름과 Talk ID가 들어가는 가변 영역*/
+
+.flow-header-name {
+    -unity-font-style: bold;
+    font-size: 18px;
+    color: #f1f2f3;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+} /*18px 굵은 이름이며 길면 생략*/
+
+.flow-header-id {
+    margin-top: 2px;
+    color: #9da2a8;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+} /*이름 아래 Talk ID*/
+
+
+.flow-section {
+    margin-top: 10px;
+    padding-top: 5px;
+    padding-bottom: 9px;
+    border-bottom-width: 1px;
+    border-bottom-color: #34373b;
+} /*개요, 대화 단계, 전투, 보상, 전체 대화 흐름을 구분*/
+
+.flow-section-title {
+    height: 25px;
+    -unity-font-style: bold;
+    color: #78c2bb;
+} /*청록색 굵은 섹션 제목*/
+
+.flow-summary-label {
+    min-height: 22px;
+    color: #aeb2b7;
+    white-space: normal;
+} /*설명 문장을 여러 줄로 표시할 수 있게 설정*/
+
+.warning-text {
+    color: #e2b365;
+} /*누락이나 순환 같은 경고 문장을 노란색으로 표시*/
+
+
+.connection-row {
+    min-height: 31px;
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 3px;
+    min-width: 0;
+} /*Label, ObjectField, 생성 버튼, 선택 버튼을 가로로 배치*/
+
+.connection-label {
+    width: 104px;
+    min-width: 104px;
+    flex-shrink: 0;
+    color: #b7bbc0;
+} /*왼쪽 설명 영역을 104px로 고정*/
+
+.connection-controls {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    flex-direction: row;
+    align-items: center;
+} /*ObjectField와 버튼을 담고 남은 너비를 차지*/
+
+.connection-field {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+} /*ObjectField가 가능한 공간을 모두 사용*/
+
+.connection-button {
+    flex-shrink: 0;
+    min-height: 24px;
+    margin-left: 4px;
+    padding-left: 7px;
+    padding-right: 7px;
+    white-space: nowrap;
+} /*연결 행의 작은 버튼 공통 스타일*/
+
+.icon-connection-button {
+    width: 36px;
+    min-width: 36px;
+    padding-left: 0;
+    padding-right: 0;
+} /*+ 버튼을 36px 고정 너비로 설정*/
+
+.short-connection-button {
+    min-width: 52px;
+} /*짧은 텍스트 버튼의 최소 너비를 52px로 설정*/
+
+.long-connection-button {
+    min-width: 76px;
+} /*긴 텍스트 버튼의 최소 너비를 76px로 설정*/
+
+.flow-command-button {
+    min-height: 24px;
+    flex-shrink: 0;
+} /*Flow 영역 일반 명령 버튼의 최소 높이를 24px로 설정*/
+
+
+.dialogue-row {
+    margin-bottom: 5px;
+    padding: 7px;
+    border-left-width: 3px;
+    border-left-color: #4d807c;
+    background-color: #25282c;
+} /*TalkData 하나를 어두운 배경과 청록색 왼쪽 선으로 구분*/
+
+.dialogue-label {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    margin-bottom: 4px;
+    color: #d5d8db;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+} /*대사 미리보기를 한 줄로 표시하고 길면 생략*/
+
+.choice-row {
+    margin-top: 5px;
+    padding-left: 10px;
+    border-left-width: 2px;
+    border-left-color: #9f7b3f;
+} /*ChoiceData를 왼쪽 들여쓰기와 황색 선으로 구분*/
+
+.choice-title {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    min-height: 22px;
+    -unity-font-style: bold;
+    color: #e2c58d;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+} /*ChoiceData 이름을 굵은 황색 계열로 표시*/
+
+.flow-title-row {
+    min-width: 0;
+    flex-direction: row;
+    align-items: center;
+} /*제목과 편집·추가 버튼을 가로로 배치*/
+
+.dialogue-depth-1 {
+    margin-left: 10px;
+}
+
+.dialogue-depth-2 {
+    margin-left: 20px;
+}
+
+.dialogue-depth-3 {
+    margin-left: 30px;
+}
+
+.dialogue-depth-4 {
+    margin-left: 40px;
+}
+
+.dialogue-depth-5 {
+    margin-left: 50px;
+}
+
+.dialogue-depth-6 {
+    margin-left: 60px;
+} /*대화가 다음 대화로 연결될수록 10px씩*/
+
+
+.detail-header {
+    height: 34px;
+    min-height: 34px;
+    flex-direction: row;
+    align-items: center;
+    padding-left: 10px;
+    padding-right: 6px;
+    border-bottom-width: 1px;
+    border-bottom-color: #111214;
+} /*상세 대상 이름과 선택 버튼이 있는 34px 헤더*/
+
+.detail-header > .pane-title {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+} /*긴 SO 이름이 패널을 넘으면 생략*/
+
+.detail-header-button {
+    flex-shrink: 0;
+    min-height: 24px;
+    margin-left: 4px;
+    padding-left: 7px;
+    padding-right: 7px;
+    white-space: nowrap;
+} /*SO 이름이 길어져도 상세 헤더 버튼의 글자가 잘리지 않게 유지*/
+
+.rename-detail-button {
+    min-width: 68px;
+} /*이름 변경 글자가 버튼 밖으로 나오지 않도록 최소 너비 지정*/
+
+.inspector-scroll {
+    flex-grow: 1;
+    min-width: 0;
+    min-height: 180px;
+    padding: 7px;
+} /*상세 Inspector가 들어가는 세로 스크롤 영역*/
+
+.inspector-scroll .unity-base-field__label {
+    min-width: 90px;
+    max-width: 42%;
+    white-space: normal;
+} /*Unity Inspector 필드 Label 너비를 최소 90px, 최대 42%로 제한*/
+
+.inspector-scroll .unity-base-field__input {
+    flex-shrink: 1;
+    min-width: 0;
+} /*입력 영역이 좁은 창에서도 줄어들 수 있게 설정*/
+
+.inspector-empty {
+    padding: 12px;
+    color: #888d93;
+    white-space: normal;
+} /*선택 대상이 없거나 Editor 생성에 실패했을 때 표시하는 안내 문장*/
+
+
+.validation-pane {
+    height: 230px;
+    min-height: 150px;
+    border-top-width: 1px;
+    border-top-color: #111214;
+} /*오른쪽 아래 230px 높이의 검사 영역*/
+
+.validation-header {
+    height: 30px;
+    min-height: 30px;
+    flex-direction: row;
+    align-items: center;
+    padding-left: 9px;
+    padding-right: 9px;
+} /*검사 제목과 개수 배지를 가로로 배치*/
+
+.validation-header > .pane-title {
+    flex-grow: 1;
+}
+
+.validation-count {
+    min-width: 23px;
+    height: 19px;
+    -unity-text-align: middle-center;
+    background-color: #3a3d42;
+    border-radius: 3px;
+} /*오류·경고 수를 보여주는 작은 배지*/
+
+.validation-list {
+    flex-grow: 1;
+} /*검사 목록이 남은 높이를 사용*/
+
+.validation-row {
+    min-height: 42px;
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 5px 7px;
+    border-bottom-width: 1px;
+    border-bottom-color: #373a3e;
+    min-width: 0;
+} /*검사 결과 한 건의 행*/
+
+.validation-mark {
+    width: 18px;
+    min-width: 18px;
+    -unity-font-style: bold;
+} /*E, W, I 표시 영역*/
+
+.validation-message {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    white-space: normal;
+} /*검사 내용을 여러 줄로 표시*/
+
+.validation-error .validation-mark {
+    color: #e46f61;
+}
+
+.validation-warning .validation-mark {
+    color: #e2b365;
+}
+
+.validation-info .validation-mark {
+    color: #72b8c8;
+}
+/*각각 빨강, 노랑, 청록으로 표시*/
+
+
+.status-bar {
+    height: 23px;
+    min-height: 23px;
+    flex-direction: row;
+    align-items: center;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-top-width: 1px;
+    border-top-color: #111214;
+    background-color: #292c30;
+    color: #9ba0a6;
+    min-width: 0;
+} /*높이 23px인 창 하단 상태 영역*/
+
+.status-message {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+} /*생성, 저장, 검사 결과 같은 최근 작업 상태를 표시*/
+
+.status-path {
+    flex-grow: 0;
+    flex-shrink: 1;
+    min-width: 0;
+    margin-left: 12px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    -unity-text-align: middle-right;
+} /*현재 선택한 SO의 Asset 경로를 오른쪽 정렬로 표시*/
+
+
+.compact-window .toolbar-title {
+    display: none;
+}
+
+.compact-window .browser-pane {
+    width: 210px;
+    min-width: 170px;
+}
+
+.compact-window .detail-pane {
+    width: 320px;
+    min-width: 250px;
+}
+
+.compact-window .main-toolbar {
+    padding-left: 3px;
+    padding-right: 3px;
+}
+
+.narrow-window .browser-pane {
+    width: 175px;
+    min-width: 145px;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.narrow-window .detail-pane {
+    width: 280px;
+    min-width: 220px;
+}
+
+.narrow-window .flow-pane {
+    min-width: 240px;
+}
+
+.narrow-window .main-toolbar {
+    font-size: 11px;
+}
+
+.compact-flow .flow-scroll {
+    padding-left: 9px;
+    padding-right: 9px;
+}
+
+.compact-flow .connection-row {
+    flex-direction: column;
+    align-items: stretch;
+    margin-bottom: 7px;
+}
+
+.compact-flow .connection-label {
+    width: auto;
+    min-width: 0;
+    min-height: 19px;
+    margin-bottom: 2px;
+}
+
+.compact-flow .connection-controls {
+    width: 100%;
+}
+
+.compact-flow .dialogue-depth-1,
+.compact-flow .dialogue-depth-2,
+.compact-flow .dialogue-depth-3,
+.compact-flow .dialogue-depth-4,
+.compact-flow .dialogue-depth-5,
+.compact-flow .dialogue-depth-6 {
+    margin-left: 6px;
+}

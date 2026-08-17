@@ -6,6 +6,7 @@ using Code.Scripts.Entities;
 using PSB_Lib.Dependencies;
 using PSB_Lib.ObjectPool.RunTime;
 using PSB.Code.BattleCode.BattleSystems;
+using PSB.Code.BattleCode.Enemies;
 using PSB.Code.BattleCode.Events;
 using PSB.Code.BattleCode.Players;
 using PSW.Code.EventBus;
@@ -23,22 +24,14 @@ namespace Work.PSB.Code.FieldCode
 
         [Inject] private PoolManagerMono _poolManager;
         [Inject] private PlayerManager _playerManager;
+        [Inject] private BattleEnemyManager _enemyManager;
 
         private void Awake()
         {
             KillCounter.Instance?.TakeSnapshot();
             BattleLootSession.Instance?.Clear();
 
-            Bus<PhaseClearEvent>.OnEvent += HandlePhaseClear;
-            Bus<SpawnAdditionalEnemiesEvent>.OnEvent += HandleSpawnAdditionalEnemies;
-
             ApplyPresentation();
-        }
-
-        private void OnDestroy()
-        {
-            Bus<PhaseClearEvent>.OnEvent -= HandlePhaseClear;
-            Bus<SpawnAdditionalEnemiesEvent>.OnEvent -= HandleSpawnAdditionalEnemies;
         }
 
         private IEnumerator Start()
@@ -46,12 +39,12 @@ namespace Work.PSB.Code.FieldCode
             yield return null;
             ApplyMilestone();
             
-            StartCurrentPhase();
+            StartBattle();
         }
 
-        private void StartCurrentPhase()
+        private void StartBattle()
         {
-            var enemies = BattleRuntimeData.GetCurrentPhaseEnemies();
+            var enemies = BattleRuntimeData.GetCurrentEnemies();
             
             if (enemies == null || enemies.Length == 0)
             {
@@ -60,49 +53,33 @@ namespace Work.PSB.Code.FieldCode
                 return;
             }
 
-            foreach (var enemyData in enemies)
+            BattleEnemyManager enemyManager = ResolveEnemyManager();
+            enemyManager?.BeginEncounter();
+
+            for (int i = 0; i < enemies.Length; i++)
             {
+                EnemySO enemyData = enemies[i];
                 if (enemyData == null)
                 {
                     Debug.LogWarning("[BattleLoader] Encountered null EnemySO in runtime data.");
                     continue;
                 }
 
-                enemyFactory.CreateEnemy(enemyData, _poolManager);
+                BattleEnemy instance = enemyFactory.CreateEnemy(enemyData, _poolManager);
+                if (instance != null)
+                    instance.SetEncounterIndex(i);
             }
 
-            int totalPhases = BattleRuntimeData.EncounterData != null ? 
-                BattleRuntimeData.EncounterData.phases.Length : 1;
-            
-            Bus<PhaseStartEvent>.Raise(new PhaseStartEvent(BattleRuntimeData.CurrentPhaseIndex, 
-                totalPhases, enemies));
+            enemyManager?.StartBattleEncounter();
+            Bus<BattleEncounterStartEvent>.Raise(new BattleEncounterStartEvent(enemies));
         }
 
-        private void HandlePhaseClear(PhaseClearEvent evt)
+        private BattleEnemyManager ResolveEnemyManager()
         {
-            if (BattleRuntimeData.MoveToNextPhase())
-            {
-                Debug.Log($"[BattleLoader] 페이즈 {BattleRuntimeData.CurrentPhaseIndex + 1} 시작!");
-                StartCurrentPhase();
-            }
-            else
-            {
-                Debug.Log("[BattleLoader] 모든 페이즈 클리어. 전투 승리!");
-                Bus<BattleEnd>.Raise(new BattleEnd(true));
-            }
-        }
+            if (_enemyManager == null)
+                _enemyManager = FindAnyObjectByType<BattleEnemyManager>();
 
-        private void HandleSpawnAdditionalEnemies(SpawnAdditionalEnemiesEvent evt)
-        {
-            if (evt.EnemiesToSpawn == null || evt.EnemiesToSpawn.Length == 0) return;
-
-            foreach (var enemyData in evt.EnemiesToSpawn)
-            {
-                if (enemyData != null)
-                {
-                    enemyFactory.CreateEnemy(enemyData, _poolManager);
-                }
-            }
+            return _enemyManager;
         }
 
         private void ApplyPresentation()

@@ -27,7 +27,7 @@ namespace Work.PSB.Code.FieldCode.BTs
         {
             entityRenderer.OnAnimationHitTrigger -= HandleHit;
             entityRenderer.OnAnimationEndTrigger -= HandleEnd;
-            entityRenderer.OnDeadEndTrigger += HandleDead;
+            entityRenderer.OnDeadEndTrigger -= HandleDead;
         }
 
         private void HandleDead()

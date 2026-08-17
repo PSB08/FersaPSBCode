@@ -100,6 +100,50 @@ namespace PSB.Code.BattleCode.Enemies
             for (int i = 0; i < spawnCount; i++)
                 CreateDropObject(item.itemPrefab, worldPos);
         }
+        
+        public GameObject CreateDropVisualObject(GameObject prefab, Vector3 worldPos, bool autoDestroy = false)
+        {
+            if (prefab == null)
+                return null;
+
+            Vector3 startPos = new Vector3(worldPos.x, worldPos.y - 1.5f, worldPos.z);
+            GameObject obj = Instantiate(prefab, startPos, Quaternion.identity);
+
+            if (Injector.Instance != null)
+                Injector.Instance.InjectTo(obj);
+
+            Vector2 dir = Random.insideUnitCircle.normalized;
+
+            if (dir == Vector2.zero)
+                dir = Vector2.up;
+
+            if (dir.y < 0)
+                dir.y *= -1f;
+
+            float distance = Random.Range(0.6f, 1.5f);
+            Vector3 endPos = startPos + new Vector3(dir.x, dir.y, 0f) * distance;
+
+            Vector3 originScale = obj.transform.localScale;
+
+            Sequence seq = DOTween.Sequence();
+            seq.Append(obj.transform.DOScale(originScale, 0.15f).SetEase(Ease.OutBack));
+            seq.Append(obj.transform.DOJump(endPos, 1.0f, 1, 0.45f).SetEase(Ease.OutQuad));
+            seq.Append(obj.transform.DOScale(originScale - new Vector3(0.1f, 0.1f, 0.1f), 0.08f));
+            seq.Append(obj.transform.DOScale(originScale, 0.08f));
+
+            if (autoDestroy)
+            {
+                seq.AppendInterval(0.35f);
+                seq.Append(obj.transform.DOScale(Vector3.zero, 0.15f).SetEase(Ease.InBack));
+                seq.OnComplete(() =>
+                {
+                    if (obj != null)
+                        Destroy(obj);
+                });
+            }
+
+            return obj;
+        }
 
         private void CreateDropObject(GameObject prefab, Vector3 worldPos)
         {

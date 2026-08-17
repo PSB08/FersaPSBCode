@@ -1,7 +1,9 @@
-﻿using System;
+﻿using PSW.Code.EventBus;
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Work.PSB.Code.CoreSystem.Sounds;
 
 namespace Work.PSB.Code.CoreSystem.TutoSystem
 {
@@ -9,6 +11,8 @@ namespace Work.PSB.Code.CoreSystem.TutoSystem
     {
         [SerializeField] private TMP_InputField searchInput;
         [SerializeField] private Button clearSearchButton;
+        
+        [SerializeField] private SoundSO uiClickSound;
 
         public event Action<string> OnSearchValueChanged;
 
@@ -74,6 +78,8 @@ namespace Work.PSB.Code.CoreSystem.TutoSystem
             if (searchInput == null)
                 return;
 
+            PlayClickSfx();
+            
             searchInput.text = string.Empty;
             searchInput.caretPosition = 0;
             searchInput.stringPosition = 0;
@@ -85,6 +91,14 @@ namespace Work.PSB.Code.CoreSystem.TutoSystem
             OnSearchValueChanged?.Invoke(string.Empty);
 
             searchInput.DeactivateInputField();
+        }
+        
+        private void PlayClickSfx()
+        {
+            if (uiClickSound == null || uiClickSound.clip == null)
+                return;
+
+            Bus<PlaySFXEvent>.Raise(SoundEvents.PlaySFXEvent.Initialize(transform.position, uiClickSound));
         }
         
     }

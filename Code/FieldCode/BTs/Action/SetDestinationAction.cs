@@ -15,8 +15,10 @@ namespace PSB.Code.FieldCode.BTs.Action
 
         protected override Status OnStart()
         {
-            Agent.Value.SetDestination(NextPos.Value);
-            return Status.Success;
+            if (Agent.Value == null)
+                return Status.Failure;
+
+            return Agent.Value.SetDestination(NextPos.Value) ? Status.Success : Status.Failure;
         }
         
     }

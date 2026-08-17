@@ -3,12 +3,16 @@ using PSW.Code.EventBus;
 using PSW.Code.Talk;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Work.PSB.Code.CoreSystem;
+using Work.PSB.Code.CoreSystem.Sounds;
 using Work.PSB.Code.FieldCode.MapSaves;
 
 namespace Work.PSB.Code.FieldCode.MiniGames.MonsterHunt
 {
     public class BoxCollectAction : MonoBehaviour, IInteractAction
     {
+        [SerializeField] private SoundSO openSound;
+
         private InteractContext _ctx;
         private FieldBoxCollectible _box;
 
@@ -44,8 +48,20 @@ namespace Work.PSB.Code.FieldCode.MiniGames.MonsterHunt
             
             int openHash = Animator.StringToHash("OPEN");
             _box.Animator.SetParam(openHash, true);
+
+            PlaySfx(openSound, transform.position);
             
             Bus<RequestSaveEvent>.Raise(new RequestSaveEvent());
+
+            if (!string.IsNullOrEmpty(_ctx.rewardKey))
+            {
+                Bus<TalkRewardRequested>.Raise(new TalkRewardRequested(
+                    _ctx.talkId,
+                    _ctx.targetEnemyId,
+                    _ctx.rewardKey,
+                    transform.position
+                ));
+            }
             
             Bus<TalkFinished>.Raise(new TalkFinished(
                 _ctx.talkId,
@@ -58,6 +74,15 @@ namespace Work.PSB.Code.FieldCode.MiniGames.MonsterHunt
             SceneSaveSystem.SetBoxCollected(sceneName, _box.BoxId, true);
             
             _ctx.owner.SetStartTalkFlag(false);
+        }
+
+        private void PlaySfx(SoundSO sound, Vector3 position)
+        {
+            if (sound == null || sound.clip == null)
+                return;
+
+            PlaySFXEvent soundEvt = SoundEvents.PlaySFXEvent.Initialize(position, sound);
+            Bus<PlaySFXEvent>.Raise(soundEvt);
         }
         
     }

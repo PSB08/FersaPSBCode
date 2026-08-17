@@ -1,7 +1,8 @@
-﻿using PSB_Lib.Dependencies;
+﻿using PSB.Code.BattleCode.Events;
+using PSB_Lib.Dependencies;
 using PSB_Lib.ObjectPool.RunTime;
-using PSB.Code.BattleCode.Events;
 using PSW.Code.EventBus;
+using System;
 using UnityEngine;
 using YIS.Code.Effects;
 
@@ -31,6 +32,8 @@ namespace PSB.Code.BattleCode.Enemies
             req.target.Heal(req.value, req.mode);
             
             float actualHealed = req.target.CurrentHealth - beforeHealth;
+            actualHealed = MathF.Round(actualHealed, 1);
+
             if (actualHealed <= 0f) return;
             
             Bus<HealTextUiEvent>.Raise(new HealTextUiEvent(req.target.transform.position, actualHealed));

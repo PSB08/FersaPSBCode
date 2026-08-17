@@ -18,6 +18,14 @@ namespace PSB.Code.BattleCode.UIs.BossShopUI
 
         [SerializeField] private int maxItemPickupNum = 3;
         [SerializeField] private int maxSkillPickupNum = 3;
+        [SerializeField] private Grade[] skillGradeOrder =
+        {
+            Grade.Common,
+            Grade.Uncommon,
+            Grade.Rare,
+            Grade.Epic,
+            Grade.Legendary
+        };
 
         [SerializeField] private List<DetailDataSO> detailUiTable;
 
@@ -30,7 +38,8 @@ namespace PSB.Code.BattleCode.UIs.BossShopUI
         private List<UnlockDataSO> _pickUpSkillTable;
         
         private List<int> _itemKeyTable;
-        private List<int> _skillKeyTable;
+        private Dictionary<Grade, List<int>> _skillKeysByGrade;
+        private int _skillGradeIndex;
 
         [Provide]
         public IBossShopService Provide() => this;
@@ -55,9 +64,12 @@ namespace PSB.Code.BattleCode.UIs.BossShopUI
             if (bossItemDataList == null || bossItemDataList.shopItemDataList == null)
             {
                 _itemKeyTable = new List<int>();
-                _skillKeyTable = new List<int>();
+                _skillKeysByGrade = new Dictionary<Grade, List<int>>();
                 return;
             }
+
+            _skillGradeIndex = 0;
+            _skillKeysByGrade = new Dictionary<Grade, List<int>>();
 
             foreach (var item in bossItemDataList.shopItemDataList)
             {
@@ -75,13 +87,17 @@ namespace PSB.Code.BattleCode.UIs.BossShopUI
 
                     case ShopItemType.Skill:
                         if (!_skills.ContainsKey(item.id))
+                        {
                             _skills.Add(item.id, item);
+
+                            if (item.shopItemData.skillData != null)
+                                AddSkillKeyByGrade(item.shopItemData.skillData.grade, item.id);
+                        }
                         break;
                 }
             }
 
             _itemKeyTable = _items.Keys.ToList();
-            _skillKeyTable = _skills.Keys.ToList();
 
             InitItems();
         }
@@ -90,21 +106,21 @@ namespace PSB.Code.BattleCode.UIs.BossShopUI
         {
             for (int i = 0; i < maxItemPickupNum; i++)
             {
-                TryAddRandomItem();
+                TryAddItem();
             }
 
             for (int i = 0; i < maxSkillPickupNum; i++)
             {
-                TryAddRandomSkill();
+                TryAddSkill();
             }
         }
 
-        private bool TryAddRandomItem()
+        private bool TryAddItem()
         {
             if (_itemKeyTable == null || _itemKeyTable.Count <= 0)
                 return false;
 
-            int index = Random.Range(0, _itemKeyTable.Count);
+            int index = 0;
             int itemKey = _itemKeyTable[index];
 
             _pickUpItemTable.Add(_items[itemKey]);
@@ -115,20 +131,45 @@ namespace PSB.Code.BattleCode.UIs.BossShopUI
             return true;
         }
 
-        private bool TryAddRandomSkill()
+        private bool TryAddSkill()
         {
-            if (_skillKeyTable == null || _skillKeyTable.Count <= 0)
+            if (_skillKeysByGrade == null || skillGradeOrder == null || skillGradeOrder.Length <= 0)
                 return false;
 
-            int index = Random.Range(0, _skillKeyTable.Count);
-            int skillKey = _skillKeyTable[index];
+            for (int i = 0; i < skillGradeOrder.Length; ++i)
+            {
+                Grade grade = skillGradeOrder[_skillGradeIndex];
+                _skillGradeIndex = (_skillGradeIndex + 1) % skillGradeOrder.Length;
 
-            _pickUpSkillTable.Add(_skills[skillKey]);
+                if (!_skillKeysByGrade.TryGetValue(grade, out List<int> keys))
+                    continue;
 
-            _skillKeyTable[index] = _skillKeyTable[^1];
-            _skillKeyTable.RemoveAt(_skillKeyTable.Count - 1);
+                if (keys == null || keys.Count <= 0)
+                    continue;
 
-            return true;
+                int index = Random.Range(0, keys.Count);
+                int skillKey = keys[index];
+
+                _pickUpSkillTable.Add(_skills[skillKey]);
+
+                keys[index] = keys[^1];
+                keys.RemoveAt(keys.Count - 1);
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private void AddSkillKeyByGrade(Grade grade, int skillKey)
+        {
+            if (!_skillKeysByGrade.TryGetValue(grade, out List<int> keys))
+            {
+                keys = new List<int>();
+                _skillKeysByGrade.Add(grade, keys);
+            }
+
+            keys.Add(skillKey);
         }
 
         public List<UnlockDataSO> LoadItems() => _pickUpItemTable;
@@ -165,13 +206,13 @@ namespace PSB.Code.BattleCode.UIs.BossShopUI
                 case ShopItemType.Item:
                     _pickUpItemTable.Remove(item);
                     _items.Remove(item.id);
-                    TryAddRandomItem();
+                    TryAddItem();
                     break;
 
                 case ShopItemType.Skill:
                     _pickUpSkillTable.Remove(item);
                     _skills.Remove(item.id);
-                    TryAddRandomSkill();
+                    TryAddSkill();
                     break;
             }
             Bus<BossShopRefreshEvent>.Raise(new BossShopRefreshEvent());

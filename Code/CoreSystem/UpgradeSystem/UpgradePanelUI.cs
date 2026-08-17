@@ -8,6 +8,7 @@ using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Work.PSB.Code.CoreSystem.Sounds;
 using YIS.Code.Defines;
 
 namespace Work.PSB.Code.CoreSystem.UpgradeSystem
@@ -60,6 +61,7 @@ namespace Work.PSB.Code.CoreSystem.UpgradeSystem
 
         [Header("Reset")]
         [SerializeField] private Button resetBtn;
+        [SerializeField] private TextMeshProUGUI resetTxt;
         [SerializeField] private ItemType resetCostType = ItemType.PP;
         [SerializeField] private ItemType pointValueType = ItemType.PP;
         [SerializeField] private int resetCost = 500;
@@ -67,6 +69,9 @@ namespace Work.PSB.Code.CoreSystem.UpgradeSystem
         [Header("Settings")]
         [SerializeField] private bool disableButton = true;
         [SerializeField] private int globalMaxLevel = 30;
+
+        [SerializeField] private Button closeBtn;
+        [SerializeField] private SoundSO uiClickSound;
 
         private UpgradeService _service;
         private bool _isOpened;
@@ -92,6 +97,7 @@ namespace Work.PSB.Code.CoreSystem.UpgradeSystem
                     {
                         if (_service.TryUpgrade(entry.def, GetAllDefs()))
                         {
+                            PlaySfx(transform.position);
                             RefreshAll();
                         }
                     });
@@ -106,10 +112,19 @@ namespace Work.PSB.Code.CoreSystem.UpgradeSystem
 
                     if (_service.TryResetAllUpgrades(GetAllDefs(), resetCostType, resetCost))
                     {
+                        PlaySfx(transform.position);
                         RefreshAll();
                     }
                 });
             }
+
+            if (closeBtn != null)
+            {
+                closeBtn.onClick.AddListener(OnCloseButtonClick);
+            }
+            
+            if (resetTxt != null)
+                resetTxt.SetText($"리셋 가격 :     {resetCost}");
         }
 
         private void Start()
@@ -130,6 +145,9 @@ namespace Work.PSB.Code.CoreSystem.UpgradeSystem
             }
 
             if (resetBtn != null) resetBtn.onClick.RemoveAllListeners();
+
+            if (closeBtn != null)
+                closeBtn.onClick.RemoveListener(OnCloseButtonClick);
         }
 
         private void OnCurrencyChanged(CurrencyChangedEvent evt)
@@ -249,6 +267,18 @@ namespace Work.PSB.Code.CoreSystem.UpgradeSystem
             for (int i = 0; i < entries.Length; i++)
                 defs[i] = entries[i]?.def;
             return defs;
+        }
+
+        private void OnCloseButtonClick()
+        {
+            PlaySfx(transform.position);
+        }
+
+        private void PlaySfx(Vector3 position)
+        {
+            if (uiClickSound == null || uiClickSound.clip == null) return;
+            
+            Bus<PlaySFXEvent>.Raise(SoundEvents.PlaySFXEvent.Initialize(position, uiClickSound));
         }
 
         public void DataInit()

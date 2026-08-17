@@ -8,6 +8,8 @@ namespace Work.PSB.Code.FieldCode
 {
     public class WarpInteraction : MonoBehaviour, IInteractable
     {
+        [field: SerializeField] public Transform InteractUITrm { get; private set; }
+        [field: SerializeField] public bool CanUIShow { get; private set; } = true;
         [SerializeField] private GameObject ui;
         [field:SerializeField] public string Name { get; set; }
         public Transform Transform => transform;

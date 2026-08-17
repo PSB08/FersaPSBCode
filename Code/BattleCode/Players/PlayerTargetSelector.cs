@@ -210,16 +210,21 @@ namespace PSB.Code.BattleCode.Players
             var enemies = _battleEnemyManager != null ? _battleEnemyManager.GetEnemies() : null;
             if (enemies == null || enemies.Count == 0)
             {
-                _currentIndex = -1;
-                _currentTarget = null;
-                ClearHighlight();
-                DisableAllEnemyRangeVfx();
+                ClearSelection();
                 return;
             }
 
-            _currentIndex = 0;
-            _currentTarget = enemies[_currentIndex];
-            HighlightEnemy(_currentTarget);
+            if (TrySelectTauntTarget(enemies))
+                return;
+
+            if (TryGetTargetableIndexFrom(enemies, 0, out int targetIndex))
+            {
+                TrySelectEnemyAt(enemies, targetIndex);
+                return;
+            }
+
+            ClearSelection();
+            ShowFirstEnemyInfoOnly(enemies);
         }
 
         private void TrySelectAndHighlightFirstEnemy()
@@ -227,29 +232,34 @@ namespace PSB.Code.BattleCode.Players
             var enemies = _battleEnemyManager != null ? _battleEnemyManager.GetEnemies() : null;
             if (enemies == null || enemies.Count == 0)
             {
-                _currentIndex = -1;
-                _currentTarget = null;
-                ClearHighlight();
-                DisableAllEnemyRangeVfx();
+                ClearSelection();
                 return;
             }
+
+            if (TrySelectTauntTarget(enemies))
+                return;
 
             if (_currentIndex < 0) _currentIndex = 0;
             _currentIndex = Mathf.Clamp(_currentIndex, 0, enemies.Count - 1);
 
-            if (_currentTarget != null)
+            if (_currentTarget != null && SkillTargetingUtil.CanBeDirectTarget(_currentTarget))
             {
                 int idx = IndexOf(enemies, _currentTarget);
                 if (idx >= 0)
                 {
-                    _currentIndex = idx;
-                    HighlightEnemy(_currentTarget);
+                    TrySelectEnemyAt(enemies, idx);
                     return;
                 }
             }
 
-            _currentTarget = enemies[_currentIndex];
-            HighlightEnemy(_currentTarget);
+            if (TryGetTargetableIndexFrom(enemies, _currentIndex, out int targetIndex))
+            {
+                TrySelectEnemyAt(enemies, targetIndex);
+                return;
+            }
+
+            ClearSelection();
+            ShowFirstEnemyInfoOnly(enemies);
         }
 
         public void MoveUp()
@@ -257,14 +267,21 @@ namespace PSB.Code.BattleCode.Players
             if (_inputLocked) return;
 
             var enemies = _battleEnemyManager != null ? _battleEnemyManager.GetEnemies() : null;
-            if (enemies == null || enemies.Count <= 1) return;
+            if (enemies == null || enemies.Count == 0) return;
 
-            if (_currentIndex < 0) _currentIndex = 0;
+            if (TrySelectTauntTarget(enemies))
+            {
+                RefreshPreviewVfx();
+                return;
+            }
 
-            _currentIndex = (_currentIndex + 1) % enemies.Count;
-            _currentTarget = enemies[_currentIndex];
+            if (!TryGetNextTargetableIndex(enemies, _currentIndex, 1, out int nextIndex, true))
+            {
+                ClearSelection();
+                return;
+            }
 
-            HighlightEnemy(_currentTarget);
+            TrySelectEnemyAt(enemies, nextIndex);
             RefreshPreviewVfx();
         }
 
@@ -273,15 +290,21 @@ namespace PSB.Code.BattleCode.Players
             if (_inputLocked) return;
 
             var enemies = _battleEnemyManager != null ? _battleEnemyManager.GetEnemies() : null;
-            if (enemies == null || enemies.Count <= 1) 
+            if (enemies == null || enemies.Count == 0) return;
+
+            if (TrySelectTauntTarget(enemies))
+            {
+                RefreshPreviewVfx();
                 return;
+            }
 
-            if (_currentIndex < 0) _currentIndex = 0;
+            if (!TryGetNextTargetableIndex(enemies, _currentIndex, -1, out int nextIndex, true))
+            {
+                ClearSelection();
+                return;
+            }
 
-            _currentIndex = (_currentIndex - 1 + enemies.Count) % enemies.Count;
-            _currentTarget = enemies[_currentIndex];
-
-            HighlightEnemy(_currentTarget);
+            TrySelectEnemyAt(enemies, nextIndex);
             RefreshPreviewVfx();
         }
 
@@ -289,6 +312,12 @@ namespace PSB.Code.BattleCode.Players
         {
             if (target == null)
                 return;
+
+            if (!SkillTargetingUtil.CanBeDirectTarget(target))
+            {
+                ClearHighlight();
+                return;
+            }
 
             ClearHighlight();
 
@@ -319,12 +348,17 @@ namespace PSB.Code.BattleCode.Players
             var enemies = _battleEnemyManager != null ? _battleEnemyManager.GetEnemies() : null;
             if (enemies == null || enemies.Count == 0)
             {
-                _currentTarget = null;
-                _currentIndex = -1;
+                ClearSelection();
                 return null;
             }
 
-            if (_currentTarget != null && !_currentTarget.IsDead)
+            if (SkillTargetingUtil.TryGetTauntTargetIndex(enemies, out int tauntIndex))
+            {
+                TrySelectEnemyAt(enemies, tauntIndex);
+                return _currentTarget;
+            }
+
+            if (_currentTarget != null && SkillTargetingUtil.CanBeDirectTarget(_currentTarget))
             {
                 int idx = IndexOf(enemies, _currentTarget);
                 if (idx >= 0)
@@ -332,35 +366,15 @@ namespace PSB.Code.BattleCode.Players
             }
 
             if (_currentIndex < 0) _currentIndex = 0;
-            int startIdx = _currentIndex;
-            int attempt = 0;
 
-            while (attempt < enemies.Count)
+            if (TryGetTargetableIndexFrom(enemies, _currentIndex, out int targetIndex))
             {
-                int checkIdx = (startIdx + attempt) % enemies.Count;
-                var candidate = enemies[checkIdx];
-
-                if (candidate != null && !candidate.IsDead)
-                {
-                    _currentIndex = checkIdx;
-                    _currentTarget = candidate;
-
-                    HighlightEnemy(_currentTarget);
-                    return _currentTarget;
-                }
-
-                attempt++;
+                TrySelectEnemyAt(enemies, targetIndex);
+                return _currentTarget;
             }
 
-            _currentTarget = null;
-            _currentIndex = -1;
-            ClearHighlight();
+            ClearSelection();
             return null;
-
-            //_currentIndex = Mathf.Clamp(_currentIndex, 0, enemies.Count - 1);
-
-            //_currentTarget = enemies[_currentIndex];
-            //return _currentTarget;
         }
 
         public int GetCurrentTargetIndex()
@@ -369,14 +383,126 @@ namespace PSB.Code.BattleCode.Players
             if (enemies == null || enemies.Count == 0) 
                 return -1;
 
-            if (_currentTarget != null)
+            if (SkillTargetingUtil.TryGetTauntTargetIndex(enemies, out int tauntIndex))
+            {
+                _currentIndex = tauntIndex;
+                _currentTarget = enemies[tauntIndex];
+                return tauntIndex;
+            }
+
+            if (_currentTarget != null && SkillTargetingUtil.CanBeDirectTarget(_currentTarget))
             {
                 int idx = IndexOf(enemies, _currentTarget);
                 if (idx >= 0) 
                     return idx;
             }
 
-            return _currentIndex;
+            if (TryGetTargetableIndexFrom(enemies, _currentIndex, out int targetIndex))
+            {
+                _currentIndex = targetIndex;
+                _currentTarget = enemies[targetIndex];
+                return targetIndex;
+            }
+
+            return -1;
+        }
+        
+        private bool TrySelectTauntTarget(IReadOnlyList<BattleEnemy> enemies)
+        {
+            if (!SkillTargetingUtil.TryGetTauntTargetIndex(enemies, out int tauntIndex))
+                return false;
+
+            return TrySelectEnemyAt(enemies, tauntIndex);
+        }
+
+        private bool TrySelectEnemyAt(IReadOnlyList<BattleEnemy> enemies, int index)
+        {
+            if (enemies == null || index < 0 || index >= enemies.Count)
+                return false;
+
+            var target = enemies[index];
+            if (!SkillTargetingUtil.CanBeDirectTarget(target))
+                return false;
+
+            _currentIndex = index;
+            _currentTarget = target;
+
+            HighlightEnemy(_currentTarget);
+            return true;
+        }
+
+        private bool TryGetTargetableIndexFrom(IReadOnlyList<BattleEnemy> enemies, int startIndex, out int targetIndex)
+        {
+            targetIndex = -1;
+
+            if (enemies == null || enemies.Count == 0)
+                return false;
+
+            if (startIndex < 0)
+                startIndex = 0;
+
+            startIndex %= enemies.Count;
+
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                int index = (startIndex + i) % enemies.Count;
+                var enemy = enemies[index];
+
+                if (!SkillTargetingUtil.CanBeDirectTarget(enemy))
+                    continue;
+
+                targetIndex = index;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryGetNextTargetableIndex(IReadOnlyList<BattleEnemy> enemies, int currentIndex, 
+            int direction, out int targetIndex, bool logBlockedTarget = false)
+        {
+            targetIndex = -1;
+
+            if (enemies == null || enemies.Count == 0)
+                return false;
+
+            direction = direction >= 0 ? 1 : -1;
+
+            int startIndex = currentIndex;
+            if (startIndex < 0 || startIndex >= enemies.Count)
+                startIndex = direction > 0 ? -1 : enemies.Count;
+
+            bool hasLoggedBlock = false;
+
+            for (int i = 1; i <= enemies.Count; i++)
+            {
+                int index = (startIndex + direction * i) % enemies.Count;
+                if (index < 0)
+                    index += enemies.Count;
+
+                var enemy = enemies[index];
+
+                bool canTarget = SkillTargetingUtil.CanBeDirectTarget(enemy, logBlockedTarget && !hasLoggedBlock);
+
+                if (!canTarget)
+                {
+                    hasLoggedBlock = true;
+                    continue;
+                }
+
+                targetIndex = index;
+                return true;
+            }
+
+            return false;
+        }
+
+        private void ClearSelection()
+        {
+            _currentIndex = -1;
+            _currentTarget = null;
+            ClearHighlight();
+            DisableAllEnemyRangeVfx();
         }
 
         private int IndexOf(IReadOnlyList<BattleEnemy> list, BattleEnemy target)
@@ -422,8 +548,26 @@ namespace PSB.Code.BattleCode.Players
         private void SetPreviewVfx(IReadOnlyList<BattleEnemy> enemies, int centerIndex)
         {
             DisableAllEnemyRangeVfx();
-            
             if (enemies == null) return;
+
+            List<Entity>[] actualSlotTargets = null;
+            
+            if (_currentPreviewSkills != null && _currentPreviewSetIndex != null)
+            {
+                actualSlotTargets = new List<Entity>[_currentPreviewSkills.Length];
+                for (int i = 0; i < _currentPreviewSkills.Length; i++)
+                {
+                    if (_currentPreviewSkills[i] != null && _currentPreviewSetIndex[i])
+                    {
+                        var defaultTargets = SkillTargetingUtil.GetTargetsByRange(enemies, centerIndex, _currentPreviewSkills[i].range);
+                        
+                        actualSlotTargets[i] = _previewCalc != null 
+                            ? _previewCalc.GetActualSimulatedTargets
+                            (i, _currentPreviewSkills, _currentPreviewSetIndex, defaultTargets)
+                            : defaultTargets;
+                    }
+                }
+            }
 
             foreach (var enemy in enemies)
             {
@@ -433,19 +577,15 @@ namespace PSB.Code.BattleCode.Players
                 bool[] isHitBySlot = null;
                 bool isHitByAnything = false;
 
-                if (_currentPreviewSkills != null && _currentPreviewSetIndex != null)
+                if (_currentPreviewSkills != null && _currentPreviewSetIndex != null && actualSlotTargets != null)
                 {
                     isHitBySlot = new bool[_currentPreviewSkills.Length];
                     for (int i = 0; i < _currentPreviewSkills.Length; i++)
                     {
-                        if (_currentPreviewSkills[i] != null && _currentPreviewSetIndex[i])
+                        if (actualSlotTargets[i] != null && actualSlotTargets[i].Contains(enemy))
                         {
-                            var targetsForSkill = SkillTargetingUtil.GetTargetsByRange(enemies, centerIndex, _currentPreviewSkills[i].range);
-                            if (targetsForSkill != null && targetsForSkill.Contains(enemy))
-                            {
-                                isHitBySlot[i] = true;
-                                isHitByAnything = true;
-                            }
+                            isHitBySlot[i] = true;
+                            isHitByAnything = true;
                         }
                     }
                 }
@@ -508,6 +648,26 @@ namespace PSB.Code.BattleCode.Players
                 var vfx = e.GetModule<EnemyRangePreviewVfx>();
                 if (vfx != null)
                     vfx.SetPreview(false);
+            }
+        }
+        
+        public IReadOnlyList<BattleEnemy> GetEnemies() 
+        {
+            return _battleEnemyManager != null ? _battleEnemyManager.GetEnemies() : null;
+        }
+        
+        private void ShowFirstEnemyInfoOnly(IReadOnlyList<BattleEnemy> enemies)
+        {
+            if (enemies == null || enemies.Count == 0) return;
+
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                BattleEnemy enemy = enemies[i];
+                if (enemy == null || enemy.IsDead || !enemy.gameObject.activeInHierarchy)
+                    continue;
+
+                Bus<EnemyHoverInfoEvent>.Raise(new EnemyHoverInfoEvent(enemy, true));
+                return;
             }
         }
         

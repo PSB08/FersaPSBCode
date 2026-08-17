@@ -19,5 +19,14 @@ namespace Work.PSB.Code.CoreSystem.Sounds
         [Range(0.1f, 3f)]
         public float pitch = 1f;
         
+        [Header("Spatial")]
+        [Range(0f, 1f)]
+        public float spatialBlend = 0f;
+
+        public float minDistance = 1f;
+        public float maxDistance = 10f;
+        public AudioRolloffMode rolloffMode = AudioRolloffMode.Linear;
+        public float dopplerLevel = 0f;
+        
     }
 }

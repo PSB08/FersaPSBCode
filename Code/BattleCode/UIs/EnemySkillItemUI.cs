@@ -1,7 +1,9 @@
 ﻿using PSB.Code.BattleCode.Enemies;
+using PSW.Code.EventBus;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Work.PSB.Code.CoreSystem.Sounds;
 using YIS.Code.Skills;
 
 namespace PSB.Code.BattleCode.UIs
@@ -14,6 +16,8 @@ namespace PSB.Code.BattleCode.UIs
         [SerializeField] private Image icon;
         [SerializeField] private TextMeshProUGUI nameText;
         [SerializeField] private TextMeshProUGUI damageText;
+        
+        [SerializeField] private SoundSO uiClickSound;
 
         private EnemySkillTooltipUI _tooltip;
         private BattleEnemy _enemy;
@@ -50,6 +54,7 @@ namespace PSB.Code.BattleCode.UIs
             }
             
             EnemySkillTooltipManager.Show(tooltipPrefab, _tooltipAnchor, _enemy, _skill);
+            Bus<PlaySFXEvent>.Raise(SoundEvents.PlaySFXEvent.Initialize(transform.position, uiClickSound));
         }
         
     }

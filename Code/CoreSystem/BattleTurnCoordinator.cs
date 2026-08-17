@@ -9,7 +9,7 @@ using UnityEngine;
 using Work.CSH.Scripts.Battle;
 using Work.CSH.Scripts.Managers;
 using Work.CSH.Scripts.Relics;
-using Work.CSH.Scripts.UIs;
+using Work.PSB.Code.RunSystem;
 using Random = UnityEngine.Random;
 
 
@@ -19,9 +19,11 @@ namespace Work.PSB.Code.CoreSystem
     {
         [SerializeField] private BattleEnterContextSO enterContext;
         [SerializeField] private TurnBeforeExecutor turnBeforeExecutor;
-        [SerializeField] private TurnCoinToss turnCoinToss;
+        [SerializeField] private CoinToss coinToss;
         [SerializeField] private SkillPanels_Controller skillPanelsController;
         [SerializeField] private TurnManagerSO tm;
+
+        [SerializeField] bool isTuto = false;
 
         [Inject] private BattleEnemyManager em;
         [Inject] private PlayerManager _playerManager;
@@ -43,14 +45,17 @@ namespace Work.PSB.Code.CoreSystem
 
         private IEnumerator Co_StartTurnWhenReady()
         {
-            if (enterContext == null)
+            BattleEnterBy by;
+            if (enterContext == null || !enterContext.TryConsume(out by))
             {
-                Debug.LogError("BattleTurnCoordinator: enterContext 미할당");
-                yield break;
-            }
+                if (!RunBattleContext.IsActive)
+                {
+                    Debug.LogError("BattleTurnCoordinator: enterContext 미할당 또는 진입 요청 없음");
+                    yield break;
+                }
 
-            if (!enterContext.TryConsume(out var by))
-                yield break;
+                by = BattleEnterBy.Player;
+            }
 
             while (_playerManager == null || _playerManager.BattlePlayer == null || _playerManager.BattlePlayer.TurnManager == null)
                 yield return null;
@@ -78,10 +83,11 @@ namespace Work.PSB.Code.CoreSystem
             //_playerManager.BattlePlayer.GetModule<EntityStat>().TryGetStat("PlayerTurnProbility", out StatSO turnProbility);
 
             tm.OnTurnStarted += TurnStartEvent;
-            tm.OnTurnEnded += TurnEndEvent;                                
+            tm.OnTurnEnded += TurnEndEvent;
 
-            bool isPlayerTurn = RandomTurn(50);
-            StartCoroutine(turnCoinToss.ShowTurnTextAction(isPlayerTurn));
+            //bool isPlayerTurn = RandomTurn(50);
+            bool isPlayerTurn = isTuto ? true : RandomTurn(50);
+            StartCoroutine(coinToss.Toss(isPlayerTurn));
         }
 
 

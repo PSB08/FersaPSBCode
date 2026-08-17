@@ -3,6 +3,7 @@ using DG.Tweening;
 using PSB.Code.BattleCode.Events;
 using PSW.Code.EventBus;
 using UnityEngine;
+using Work.PSB.Code.CoreSystem.Sounds;
 using YIS.Code.Modules;
 
 namespace PSB.Code.BattleCode.UIs
@@ -22,6 +23,9 @@ namespace PSB.Code.BattleCode.UIs
         [Header("Animation")]
         [SerializeField] private float animDuration = 0.25f;
         [SerializeField] private float offsetY = 250f;
+        
+        [SerializeField] private SoundSO closeSound;
+        [SerializeField] private SoundSO uiErrorSound;
 
         private Vector2 _originPos;
         private Tween _tween;
@@ -137,7 +141,22 @@ namespace PSB.Code.BattleCode.UIs
 
         public void CloseUI()
         {
+            if (_isOpen == false)
+            {
+                PlaySfx(uiErrorSound);
+                return;
+            }
+
+            PlaySfx(closeSound);
             Bus<BuffListCloseEvent>.Raise(new BuffListCloseEvent());
+        }
+        
+        private void PlaySfx(SoundSO soundSO)
+        {
+            if (soundSO == null || soundSO.clip == null)
+                return;
+
+            Bus<PlaySFXEvent>.Raise(SoundEvents.PlaySFXEvent.Initialize(transform.position, soundSO));
         }
         
     }

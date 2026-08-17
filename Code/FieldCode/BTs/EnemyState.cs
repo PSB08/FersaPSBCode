@@ -9,6 +9,7 @@ namespace Work.PSB.Code.FieldCode.BTs
         Patrol,
         Chase,
         Hit,
-        Attack
+        Attack,
+        Dead
     }
 }

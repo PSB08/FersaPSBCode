@@ -1,6 +1,5 @@
 ﻿#if UNITY_EDITOR
 using UnityEditor;
-#endif
 using UnityEditorInternal;
 using UnityEngine;
 
@@ -16,73 +15,180 @@ namespace Work.PSB.Code.CoreSystem.Editor
             _list = new ReorderableList(serializedObject, 
                 serializedObject.FindProperty("rewardEntries"), true, true, true, true);
 
-            _list.elementHeightCallback = (int index) => {
-                var element = _list.serializedProperty.GetArrayElementAtIndex(index);
-                var typeProp = element.FindPropertyRelative("rewardType");
-                
-                float lineHeight = EditorGUIUtility.singleLineHeight + 2;
-                int rowCount = 2;
-
-                if (typeProp.enumValueIndex == (int)TalkRewardGiver.RewardType.DropTable)
-                    rowCount += 3;
-                else
-                    rowCount += 2;
-
-                return lineHeight * rowCount;
+            _list.drawHeaderCallback = rect =>
+            {
+                EditorGUI.LabelField(rect, "Talk Reward Entries");
             };
 
-            _list.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) => {
+            _list.elementHeightCallback = index =>
+            {
                 var element = _list.serializedProperty.GetArrayElementAtIndex(index);
-                
+                var typeProp = element.FindPropertyRelative("rewardType");
+
+                float lineHeight = EditorGUIUtility.singleLineHeight + 5f;
+                int rowCount = 2;
+
+                var rewardType = (TalkRewardGiver.RewardType)typeProp.enumValueIndex;
+
+                switch (rewardType)
+                {
+                    case TalkRewardGiver.RewardType.DropTable:
+                        rowCount += 2;
+                        break;
+
+                    case TalkRewardGiver.RewardType.GiveSkill:
+                    case TalkRewardGiver.RewardType.GiveRandomSkill:
+                        rowCount += 1;
+                        break;
+
+                    case TalkRewardGiver.RewardType.DropTableAndSkill:
+                        rowCount += 3;
+                        break;
+
+                    case TalkRewardGiver.RewardType.GiveRelic:
+                        rowCount += 1;
+                        break;
+
+                    case TalkRewardGiver.RewardType.GiveRandomRelic:
+                        rowCount += 1;
+                        break;
+
+                    case TalkRewardGiver.RewardType.ActiveObject:
+                        rowCount += 1;
+                        break;
+
+                    case TalkRewardGiver.RewardType.HealPlayer:
+                        rowCount += 2;
+                        break;
+                }
+
+                return lineHeight * rowCount + 5f;
+            };
+
+            _list.drawElementCallback = (rect, index, isActive, isFocused) =>
+            {
+                var element = _list.serializedProperty.GetArrayElementAtIndex(index);
+
                 float line = EditorGUIUtility.singleLineHeight;
+                float spacing = 5f;
+
+                rect.y += 2f;
 
                 EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width, line), 
                     element.FindPropertyRelative("rewardKey"));
-                rect.y += line + 5;
+
+                rect.y += line + spacing;
 
                 var typeProp = element.FindPropertyRelative("rewardType");
+
                 EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width, line), typeProp);
-                rect.y += line + 5;
 
-                if (typeProp.enumValueIndex == (int)TalkRewardGiver.RewardType.DropTable)
-                {
-                    EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width, line), 
-                        element.FindPropertyRelative("dropTable"));
-                    rect.y += line + 5;
-                    EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width, line), 
-                        element.FindPropertyRelative("useItemDropper"));
-                }
-                else if(typeProp.enumValueIndex == (int)TalkRewardGiver.RewardType.GiveRelic)
-                {
-                    EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width, line),
-                        element.FindPropertyRelative("rewardRelic"));
-                }
-                else if (typeProp.enumValueIndex == (int)TalkRewardGiver.RewardType.GiveRandomRelic)
-                {
-                    EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width, line),
-                        element.FindPropertyRelative("relicList"));
-                }
-                else
-                {
-                    EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width, line),
-                        element.FindPropertyRelative("rewardObject"));
+                rect.y += line + spacing;
 
+                var rewardType = (TalkRewardGiver.RewardType)typeProp.enumValueIndex;
+
+                switch (rewardType)
+                {
+                    case TalkRewardGiver.RewardType.DropTable:
+                    {
+                        DrawDropTableFields(element, ref rect, line, spacing);
+                        break;
+                    }
+
+                    case TalkRewardGiver.RewardType.GiveSkill:
+                    case TalkRewardGiver.RewardType.GiveRandomSkill:
+                    {
+                        DrawSkillDropTableFields(element, ref rect, line, spacing);
+                        break;
+                    }
+
+                    case TalkRewardGiver.RewardType.DropTableAndSkill:
+                    {
+                        DrawDropTableFields(element, ref rect, line, spacing);
+                        rect.y += spacing;
+                        DrawSkillDropTableFields(element, ref rect, line, spacing);
+                        break;
+                    }
+
+                    case TalkRewardGiver.RewardType.GiveRelic:
+                    {
+                        EditorGUI.PropertyField(
+                            new Rect(rect.x, rect.y, rect.width, line),
+                            element.FindPropertyRelative("rewardRelic")
+                        );
+                        break;
+                    }
+
+                    case TalkRewardGiver.RewardType.GiveRandomRelic:
+                    {
+                        EditorGUI.PropertyField(
+                            new Rect(rect.x, rect.y, rect.width, line),
+                            element.FindPropertyRelative("relicList")
+                        );
+                        break;
+                    }
+
+                    case TalkRewardGiver.RewardType.ActiveObject:
+                    {
+                        EditorGUI.PropertyField(
+                            new Rect(rect.x, rect.y, rect.width, line),
+                            element.FindPropertyRelative("rewardObject")
+                        );
+                        break;
+                    }
+
+                    case TalkRewardGiver.RewardType.HealPlayer:
+                    {
+                        EditorGUI.PropertyField(
+                            new Rect(rect.x, rect.y, rect.width, line),
+                            element.FindPropertyRelative("healValue")
+                        );
+                        rect.y += line + spacing;
+
+                        EditorGUI.PropertyField(
+                            new Rect(rect.x, rect.y, rect.width, line),
+                            element.FindPropertyRelative("healMode")
+                        );
+                        break;
+                    }
                 }
             };
+            
         }
 
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
-            
+
             EditorGUILayout.Space();
             EditorGUILayout.PropertyField(serializedObject.FindProperty("inventory"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("skillContainer"));
             EditorGUILayout.Space();
 
             _list.DoLayoutList();
 
             serializedObject.ApplyModifiedProperties();
         }
-    
+
+        private void DrawDropTableFields(SerializedProperty element, ref Rect rect, float line, float spacing)
+        {
+            EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width, line),
+                element.FindPropertyRelative("dropTable"));
+
+            rect.y += line + spacing;
+
+            EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width, line), 
+                element.FindPropertyRelative("useItemDropper"));
+
+            rect.y += line + spacing;
+        }
+
+        private void DrawSkillDropTableFields(SerializedProperty element, ref Rect rect, float line, float spacing)
+        {
+            EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width, line),
+                element.FindPropertyRelative("skillDropTable"));
+        }
+        
     }
 }
+#endif

@@ -32,16 +32,23 @@ namespace Work.PSB.Code.FieldCode
                 Quaternion.identity,
                 enemyParent
             );
-            BattleEnemy battleEnemyComp = enemyObj.GetComponent<BattleEnemy>();
-            battleEnemyComp.buffModule.SetPool(poolManager);
             
+            BattleEnemy battleEnemyComp = enemyObj.GetComponent<BattleEnemy>();
+
             if (battleEnemyComp == null)
             {
                 Debug.LogError("[EnemyFactory] Enemy prefab does not contain Enemy component!");
                 return null;
             }
 
+            battleEnemyComp.buffModule?.SetPool(poolManager);
             battleEnemyComp.Setup(enemyData);
+
+            if (battleEnemyComp is NormalBattleEnemy normalEnemy)
+            {
+                normalEnemy.RegisterToManager();
+            }
+
             return battleEnemyComp;
         }
         

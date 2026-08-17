@@ -1,10 +1,12 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using PSB.Code.BattleCode.UIs;
+using PSW.Code.EventBus;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Video;
+using Work.PSB.Code.CoreSystem.Sounds;
 
 namespace Work.PSB.Code.CoreSystem.TutoSystem
 {
@@ -37,6 +39,8 @@ namespace Work.PSB.Code.CoreSystem.TutoSystem
         [SerializeField] private bool showOnce = true;
 
         [SerializeField] private TutorialWindowAnimator animator;
+
+        [SerializeField] private SoundSO uiClickSound;
 
         private int _currentIndex;
         private readonly List<Image> _dots = new();
@@ -167,6 +171,7 @@ namespace Work.PSB.Code.CoreSystem.TutoSystem
             if (showOnce && IsCompleted())
                 TutorialArchiveSave.MarkViewed(TutorialId);
 
+            Bus<PlaySFXEvent>.Raise(SoundEvents.PlaySFXEvent.Initialize(transform.position, uiClickSound));
             Hide();
         }
 
@@ -327,6 +332,7 @@ namespace Work.PSB.Code.CoreSystem.TutoSystem
                 StopCoroutine(_pageTransitionRoutine);
 
             _pageTransitionRoutine = StartCoroutine(ChangePageRoutine(_currentIndex - 1));
+            Bus<PlaySFXEvent>.Raise(SoundEvents.PlaySFXEvent.Initialize(transform.position, uiClickSound));
         }
 
         public void OnNext()
@@ -343,6 +349,7 @@ namespace Work.PSB.Code.CoreSystem.TutoSystem
                 StopCoroutine(_pageTransitionRoutine);
 
             _pageTransitionRoutine = StartCoroutine(ChangePageRoutine(_currentIndex + 1));
+            Bus<PlaySFXEvent>.Raise(SoundEvents.PlaySFXEvent.Initialize(transform.position, uiClickSound));
         }
         
     }

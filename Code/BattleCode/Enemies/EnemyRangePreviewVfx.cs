@@ -11,13 +11,13 @@ namespace PSB.Code.BattleCode.Enemies
         
         private BlinkEffectVfx _blinkEffect;
         private EntityHealth _health;
-
+        
         public void Initialize(ModuleOwner owner)
         {
             _blinkEffect = GetComponent<BlinkEffectVfx>();
             _health = owner.GetModule<EntityHealth>();
         }
-
+        
         public void SetPreview(bool on, float expectedDamage, float accumulatedDamage = 0) 
         {
             if (on)
@@ -27,20 +27,20 @@ namespace PSB.Code.BattleCode.Enemies
                 
                 previewFx?.GetComponent<Animator>()?.Play("SelectAnimPlay", 0, 0f);
                 previewObj?.GetComponent<Animator>()?.Play("CheckerPlay", 0, 0f);
-        
+                
                 if (_blinkEffect != null && _health != null)
                 {
                     _blinkEffect.StartBlink(_health.CurrentHealth, 
-                        _health.MaxHealth, expectedDamage, accumulatedDamage); 
+                        _health.MaxHealth, _health.CurrentShield, expectedDamage, accumulatedDamage); 
                 }
             }
             else
             {
                 if (previewFx != null) 
                     previewFx.SetActive(false);
-        
+                
                 if (_blinkEffect != null && _health != null)
-                    _blinkEffect.StopBlink(_health.CurrentHealth, _health.MaxHealth);
+                    _blinkEffect.StopBlink(_health.CurrentHealth, _health.MaxHealth, _health.CurrentShield);
             }
         }
         
@@ -58,9 +58,9 @@ namespace PSB.Code.BattleCode.Enemies
             {
                 if (previewFx != null) 
                     previewFx.SetActive(false);
-        
+                
                 if (_blinkEffect != null && _health != null)
-                    _blinkEffect.StopBlink(_health.CurrentHealth, _health.MaxHealth);
+                    _blinkEffect.StopBlink(_health.CurrentHealth, _health.MaxHealth, _health.CurrentShield);
             }
         }
         

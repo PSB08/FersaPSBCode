@@ -4,6 +4,7 @@ using PSB.Code.CoreSystem.SaveSystem;
 using PSW.Code.EventBus;
 using UnityEngine;
 using Work.PSB.Code.CoreSystem;
+using Work.PSB.Code.CoreSystem.Sounds;
 using Work.PSB.Code.FieldCode.MapSaves;
 
 namespace PSB.Code.BattleCode.UIs
@@ -14,6 +15,8 @@ namespace PSB.Code.BattleCode.UIs
         [SerializeField] private EndPanelSizeToggle_Model sizeModel;
         [SerializeField] private EndPanelSizeToggle_View sizeView;
 
+        [SerializeField] private SoundSO uiClickSound;
+        
         private bool _isShown;
         private bool _isExiting;
         private bool _gameOver;
@@ -87,6 +90,9 @@ namespace PSB.Code.BattleCode.UIs
         public void ExitBtn()
         {
             if (_isExiting) return;
+            
+            PlaySfx(uiClickSound);
+            
             _isExiting = true;
 
             _cachedExitScene = BattleContext.FieldSceneName;
@@ -119,6 +125,14 @@ namespace PSB.Code.BattleCode.UIs
             }
 
             controller.Transition(_cachedExitScene);
+        }
+        
+        private void PlaySfx(SoundSO soundSO)
+        {
+            if (soundSO == null || soundSO.clip == null)
+                return;
+
+            Bus<PlaySFXEvent>.Raise(SoundEvents.PlaySFXEvent.Initialize(transform.position, soundSO));
         }
         
     }

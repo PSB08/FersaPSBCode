@@ -71,7 +71,7 @@ namespace Code.Scripts.Entities
 
             outStat = _stats.GetValueOrDefault(statName);
             if (outStat == null)
-                Debug.LogError($"{statName}이 없음");
+                Debug.LogWarning($"{Owner}에 스텟중 {statName}이 없어서 무시됨.");
             return outStat != null;
         }
 

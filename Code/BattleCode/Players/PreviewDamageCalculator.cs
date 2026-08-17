@@ -1,208 +1,334 @@
-﻿using System.Collections.Generic;
-using PSB.Code.BattleCode.Skills.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using CIW.Code;
-using Code.Scripts.Entities;
 using UnityEngine;
 using YIS.Code.Combat;
 using YIS.Code.Defines;
 using YIS.Code.Modules;
 using YIS.Code.Skills;
-using YIS.Code.Skills.Sequences;
-using YIS.Code.Skills.Interfaces;
 
 namespace PSB.Code.BattleCode.Players
 {
     public class PreviewDamageCalculator : MonoBehaviour, IModule
     {
         private Entity _owner;
-        private EntityDamageCalcModule _dmgCalcModule;
         private BuffModule _buffModule;
-
+        
+        private struct SlotChainState
+        {
+            public bool Left;
+            public bool Right;
+            public bool IsChained;
+        }
+        
         public void Initialize(ModuleOwner owner)
         {
             _owner = owner as Entity;
             if (_owner != null)
             {
-                _dmgCalcModule = _owner.GetModule<EntityDamageCalcModule>();
                 _buffModule = _owner.GetModule<BuffModule>();
-
-                Debug.Assert(_dmgCalcModule != null, $"[PreviewDamageCalculator] {_owner.name}에 EntityDamageCalcModule이 없습니다.");
+                
             }
         }
-
-        public (float curDmg, float accDmg) CalculatePreviewForTarget(Entity target, 
-            SkillDataSO[] skills, bool[] setIndex, int previewSlotIndex, bool[] isHitBySlot = null)
-        {
-            if (skills == null || setIndex == null || target == null) 
-                return (0f, 0f);
-
-            float curDmg = 0;
-            float accDmg = 0;
-
-            var slotVirtualEnchants = new Elemental[skills.Length];
-            Elemental baseEnchant = Elemental.None;
-
-            if (_buffModule != null)
-            {
-                _buffModule.TryGetElementalOverrideOrImmediately(out baseEnchant);
-            }
-
-            var comps = new BaseSkill[skills.Length];
-            for (int i = 0; i < skills.Length; i++)
-            {
-                slotVirtualEnchants[i] = baseEnchant; 
-
-                if (skills[i] != null && setIndex[i])
-                    comps[i] = GetSkillComponent(skills[i]);
-            }
-
-            int validSkillCount = 0;
-            int chainedSkillCount = 0;
-
-            bool[] isChainedLefts = new bool[skills.Length];
-            bool[] isChainedRights = new bool[skills.Length];
-
-            for (int i = 0; i < skills.Length; i++)
-            {
-                if (comps[i] != null)
-                {
-                    validSkillCount++;
-
-                    isChainedLefts[i] = CheckIsChained(i, true, skills, comps);
-                    isChainedRights[i] = CheckIsChained(i, false, skills, comps);
-
-                    if (isChainedLefts[i] || isChainedRights[i]) chainedSkillCount++;
-                }
-            }
-
-            bool isAllChained = (validSkillCount > 1) && (validSkillCount == chainedSkillCount);
-
-            for (int i = 0; i < skills.Length; i++)
-            {
-                if (comps[i] == null) continue;
-
-                bool isEnchantProvider = comps[i] is IEnchantProvider;
-                if (!isEnchantProvider) continue;
-
-                bool isChainedLeft = isChainedLefts[i];
-                bool isChainedRight = isChainedRights[i];
-
-                if (isEnchantProvider)
-                {
-                    Elemental provideElement = skills[i].elemental;
-
-                    if (comps[i] is IEnchantable) 
-                        slotVirtualEnchants[i] = provideElement;
-
-                    if (isChainedLeft && comps[i - 1] is IEnchantable)
-                    {
-                        slotVirtualEnchants[i - 1] = provideElement;
-                    }
-
-                    if (isChainedRight && comps[i + 1] is IEnchantable)
-                    {
-                        slotVirtualEnchants[i + 1] = provideElement;
-                    }
-                }
-            }   
-
-            var targetStat = target.GetModule<EntityStat>();
-            for (int i = 0; i < skills.Length; i++)
-            {
-                if (comps[i] == null) continue;
-
-                bool isChainedLeft = isChainedLefts[i];
-                bool isChainedRight = isChainedRights[i];
-                bool isChained = isChainedRight || isChainedLeft;
-                
-                bool actuallyProvidedEnchant = false;
-                
-                if (comps[i] is IEnchantProvider)
-                {
-                    bool canEnchantLeft = isChainedLeft && comps[i - 1] is IEnchantable;
-                    bool canEnchantRight = isChainedRight && comps[i + 1] is IEnchantable;
         
-                    if (canEnchantLeft || canEnchantRight)
-                    {
-                        actuallyProvidedEnchant = true; 
-                    }
-                }
-
-                bool isAttack = (comps[i] is IAttackSkill) || 
-                                (comps[i] is IEnchantProvider && !actuallyProvidedEnchant) ||
-                                (!isChained);
+        public (float curDmg, float accDmg) CalculatePreviewForTarget(Entity target, SkillDataSO[] skills,
+            bool[] setIndex, int previewSlotIndex, bool[] isHitBySlot = null)
+        {
+            if (skills == null || setIndex == null || target == null)
+                return (0f, 0f);
+            
+            float curDmg = 0f;
+            float accDmg = 0f;
+            float damageModifier = _owner != null ? _owner.SkillDamageModifier : 0f;
+            
+            bool[] links = BuildLinks(skills, setIndex);
+            SlotChainState[] chainStates = BuildSlotChainStates(skills, setIndex);
+            
+            bool isAllChained = IsAllChained(skills, setIndex, links);
+            Elemental[] slotVirtualEnchants = BuildSlotVirtualEnchants(skills, chainStates);
+            
+            for (int i = 0; i < skills.Length; i++)
+            {
+                SkillDataSO skillData = skills[i];
+                if (!IsSelectedSkill(skillData, setIndex, i))
+                    continue;
                 
-                if (!isAttack) continue;
-
-                if (isHitBySlot != null && !isHitBySlot[i]) 
-                {
-                    continue; 
-                }
-
-                float baseDamage = 0f;
-                var actions = comps[i].SimulateSkill(isChained, _owner, new List<Entity> { target });
-                if (actions != null)
-                {
-                    foreach (var action in actions)
-                        if (action is DamageSkillAction da) baseDamage += da.CurrentDamageData.Damage;
-                }
+                bool isChained = isAllChained || chainStates[i].IsChained;
+                bool providedEnchant = IsEnchantSkill(skillData) &&
+                                       (chainStates[i].Left || chainStates[i].Right);
+                bool isAttack = IsAttackSkill(skillData) || 
+                                IsEnchantSkill(skillData) && !providedEnchant || !isChained;
                 
-                if (baseDamage <= 0 && skills[i].damage > 0) baseDamage = skills[i].damage;
-                if (baseDamage <= 0) continue;
-
-                float finalMultiplier = 1f;
-
-                if (isAllChained)
-                    finalMultiplier = EntityDamageCalcModule.ALL_CHAIN_BONUS_MULTIPLIER;
-
-                float previewBaseDamage = baseDamage * finalMultiplier;
-
-                int finalDamage = _dmgCalcModule != null && targetStat != null
-                    ? _dmgCalcModule.DamageCalc(new DamageData { Damage = previewBaseDamage, ElementalType = slotVirtualEnchants[i] }, 
-                        targetStat, 0f, isPreview: true) 
-                    : Mathf.RoundToInt(previewBaseDamage);
-
-                if (i == previewSlotIndex) curDmg += finalDamage;
-                else accDmg += finalDamage;
+                if (!isAttack)
+                    continue;
+                
+                if (isHitBySlot != null && i < isHitBySlot.Length && !isHitBySlot[i])
+                    continue;
+                
+                float baseDamage = Mathf.Max(0f, skillData.damage);
+                if (baseDamage <= 0f)
+                    continue;
+                
+                float finalMultiplier = isAllChained
+                    ? EntityDamageCalcModule.ALL_CHAIN_BONUS_MULTIPLIER : 1f;
+                
+                _ = slotVirtualEnchants[i];
+                
+                float modifiedDamage = Mathf.Max(0f,
+                    baseDamage + damageModifier);
+                
+                int finalDamage = Mathf.Max(0,
+                    Mathf.RoundToInt(modifiedDamage * finalMultiplier));
+                
+                if (i == previewSlotIndex)
+                    curDmg += finalDamage;
+                else
+                    accDmg += finalDamage;
             }
+            
             return (curDmg, accDmg);
         }
-
-        private bool CheckIsChained(int index, bool checkLeft, SkillDataSO[] skills, BaseSkill[] comps)
+        
+        private bool[] BuildLinks(SkillDataSO[] skills, bool[] setIndex)
         {
-            if (checkLeft)
-            {
-                if (index <= 0 || comps[index - 1] == null) return false;
-
-                if (string.IsNullOrEmpty(skills[index].checkAttributeName)) 
-                    return false;
-
-                return skills[index].CanChainCheck(comps[index - 1]) == true && 
-                       skills[index].checkSkillType != CheckType.Next;
-            }
-            else
-            {
-                if (index >= skills.Length - 1 || comps[index + 1] == null) return false;
-
-                if (string.IsNullOrEmpty(skills[index + 1].checkAttributeName)) 
-                    return false;
-
-                return skills[index + 1].CanChainCheck(comps[index]) == true && 
-                       skills[index].checkSkillType != CheckType.Previous;
-            }
-        }
-
-        private BaseSkill GetSkillComponent(SkillDataSO skillData)
-        {
-            if (skillData == null || skillData.skillPrefab == null) return null;
+            bool[] links = skills.Length >= 2 ? new bool[skills.Length - 1] : Array.Empty<bool>();
             
-            BaseSkill skillComp = skillData.skillPrefab.GetComponent<BaseSkill>();
-            if (skillComp != null)
+            for (int i = 0; i < links.Length; i++)
             {
-                skillComp.SetData(skillData); 
-                skillComp.Initialize();
+                if (i >= setIndex.Length || i + 1 >= setIndex.Length)
+                    continue;
+                
+                if (!setIndex[i] || !setIndex[i + 1])
+                    continue;
+                
+                SkillDataSO leftSO = skills[i];
+                SkillDataSO rightSO = skills[i + 1];
+                
+                if (leftSO == null || rightSO == null)
+                    continue;
+                
+                bool leftCanParticipate = leftSO.checkSkillType.HasFlag(CheckType.Previous) ||
+                                          leftSO.checkSkillType.HasFlag(CheckType.Next);
+                
+                bool rightCanParticipate = rightSO.checkSkillType.HasFlag(CheckType.Previous) ||
+                                           rightSO.checkSkillType.HasFlag(CheckType.Next);
+                
+                bool leftToRight = leftSO.checkSkillType.HasFlag(CheckType.Next) &&
+                                   CanChain(leftSO, rightSO);
+                
+                bool rightToLeft = rightSO.checkSkillType.HasFlag(CheckType.Previous) &&
+                                   CanChain(rightSO, leftSO);
+                
+                links[i] = leftCanParticipate && rightCanParticipate && (leftToRight || rightToLeft);
             }
-            return skillComp;
+            
+            return links;
+        }
+        
+        private SlotChainState[] BuildSlotChainStates(SkillDataSO[] skills, bool[] setIndex)
+        {
+            SlotChainState[] states = new SlotChainState[skills.Length];
+            
+            for (int i = 0; i < skills.Length; i++)
+            {
+                if (i >= setIndex.Length) continue;
+                if (!setIndex[i]) continue;
+                
+                SkillDataSO currentSO = skills[i];
+                if (currentSO == null)
+                    continue;
+                
+                bool reqPrev = currentSO.checkSkillType.HasFlag(CheckType.Previous);
+                bool reqNext = currentSO.checkSkillType.HasFlag(CheckType.Next);
+                
+                bool left = false;
+                bool right = false;
+                bool isChained = false;
+                
+                if (reqPrev && reqNext)
+                {
+                    if (i > 0 && i < skills.Length - 1)
+                    {
+                        SkillDataSO prevSO = skills[i - 1];
+                        SkillDataSO nextSO = skills[i + 1];
+                        
+                        if (prevSO != null && nextSO != null)
+                        {
+                            left = CanChain(currentSO, prevSO);
+                            right = CanChain(currentSO, nextSO);
+                            
+                            if (left && right)
+                                isChained = true;
+                        }
+                    }
+                }
+                else if (reqNext)
+                {
+                    if (i < skills.Length - 1)
+                    {
+                        SkillDataSO nextSO = skills[i + 1];
+                        
+                        if (nextSO != null)
+                        {
+                            right = CanChain(currentSO, nextSO);
+                            
+                            if (right)
+                                isChained = true;
+                        }
+                    }
+                }
+                else if (reqPrev)
+                {
+                    if (i > 0)
+                    {
+                        SkillDataSO prevSO = skills[i - 1];
+                        
+                        if (prevSO != null)
+                        {
+                            left = CanChain(currentSO, prevSO);
+                            
+                            if (left)
+                                isChained = true;
+                        }
+                    }
+                }
+                
+                states[i] = new SlotChainState
+                {
+                    Left = left,
+                    Right = right,
+                    IsChained = isChained
+                };
+            }
+            
+            return states;
+        }
+        
+        private bool IsAllChained(SkillDataSO[] skills, bool[] setIndex, bool[] links)
+        {
+            if (skills.Length <= 1)
+                return false;
+            
+            if (links.Length <= 0)
+                return false;
+            
+            for (int i = 0; i < skills.Length; i++)
+            {
+                if (i >= setIndex.Length)
+                    return false;
+                
+                if (!setIndex[i])
+                    return false;
+                
+                if (skills[i] == null)
+                    return false;
+            }
+            
+            return links.All(link => link);
+        }
+        
+        private Elemental[] BuildSlotVirtualEnchants(SkillDataSO[] skills, SlotChainState[] chainStates)
+        {
+            Elemental[] slotVirtualEnchants = new Elemental[skills.Length];
+            
+            Elemental baseEnchant = Elemental.None;
+            
+            if (_buffModule != null)
+                _buffModule.TryGetElementalOverrideOrImmediately(out baseEnchant);
+            
+            for (int i = 0; i < slotVirtualEnchants.Length; i++)
+                slotVirtualEnchants[i] = baseEnchant;
+            
+            for (int i = 0; i < skills.Length; i++)
+            {
+                SkillDataSO skillData = skills[i];
+                if (!IsEnchantSkill(skillData))
+                    continue;
+                
+                Elemental provideElement = skillData.elemental;
+                
+                slotVirtualEnchants[i] = provideElement;
+                
+                if (chainStates[i].Left && i > 0 && IsEnchantableSkill(skills[i - 1]))
+                    slotVirtualEnchants[i - 1] = provideElement;
+                
+                if (chainStates[i].Right && i < skills.Length - 1 && IsEnchantableSkill(skills[i + 1]))
+                    slotVirtualEnchants[i + 1] = provideElement;
+            }
+            
+            return slotVirtualEnchants;
+        }
+        
+        public List<Entity> GetActualSimulatedTargets(int index, SkillDataSO[] skills,
+            bool[] setIndex, List<Entity> defaultTargets)
+        {
+            if (skills == null || setIndex == null || index < 0 || index >= skills.Length)
+                return defaultTargets;
+            
+            if (index >= setIndex.Length)
+                return defaultTargets;
+            
+            if (skills[index] == null || !setIndex[index])
+                return defaultTargets;
+            
+            bool[] links = BuildLinks(skills, setIndex);
+            SlotChainState[] chainStates = BuildSlotChainStates(skills, setIndex);
+            bool isAllChained = IsAllChained(skills, setIndex, links);
+            bool isChained = isAllChained || chainStates[index].IsChained;
+            
+            return ResolvePreviewTargets(skills[index], isChained, defaultTargets);
+        }
+        
+        private static bool IsSelectedSkill(SkillDataSO skillData, bool[] setIndex, int index)
+        {
+            return skillData != null && index >= 0 &&
+                   index < setIndex.Length && setIndex[index];
+        }
+        
+        private static bool CanChain(SkillDataSO source, SkillDataSO other)
+        {
+            if (source == null || other == null)
+                return false;
+            
+            SkillCategory category = source.SkillCategory;
+            return category != SkillCategory.None && category 
+                != SkillCategory.End && category == other.SkillCategory;
+        }
+        
+        private static bool IsAttackSkill(SkillDataSO skillData)
+        {
+            return skillData != null &&
+                   (skillData.SkillCategory == SkillCategory.Attack ||
+                    skillData.damage > 0f);
+        }
+        
+        private static bool IsEnchantSkill(SkillDataSO skillData)
+        {
+            return skillData != null &&
+                   skillData.SkillCategory == SkillCategory.Special;
+        }
+        
+        private static bool IsEnchantableSkill(SkillDataSO skillData)
+        {
+            return skillData != null &&
+                   skillData.SkillCategory is SkillCategory.Attack or SkillCategory.Special;
+        }
+        
+        private static List<Entity> ResolvePreviewTargets(SkillDataSO skillData, 
+            bool isChained, List<Entity> defaultTargets)
+        {
+            if (skillData == null || defaultTargets == null || defaultTargets.Count == 0)
+                return defaultTargets;
+            
+            if (skillData.TargetType == TargetType.All)
+                return defaultTargets;
+            
+            if (skillData.TargetType == TargetType.None && !isChained)
+                return defaultTargets;
+            
+            Entity firstTarget = defaultTargets[0];
+            return firstTarget != null ? new List<Entity> { firstTarget } : defaultTargets;
         }
         
     }

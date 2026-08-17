@@ -37,7 +37,7 @@ namespace Code.Scripts.Enemies.Astar
         {
             _entity = owner as Entity;
             _movement = owner.GetModule<AgentMovement>();
-            _pathArr = new Vector3[maxPathCount];
+            _pathArr = new Vector3[Mathf.Max(2, maxPathCount)];
 
             if (globalGrid == null)
             {
@@ -64,37 +64,54 @@ namespace Code.Scripts.Enemies.Astar
             return false;
         }
 
-        public void SetDestination(Vector3 destination)
+        public bool SetDestination(Vector3 destination)
         {
             _totalPathCount = 0;
+            _currentPathIndex = 0;
             IsArrived = false;
             IsPathFailed = false;
 
-            if (agent == null || globalGrid == null)
-            {
-                IsPathFailed = true;
-                return;
-            }
+            if (agent == null || globalGrid == null || _pathArr == null || _pathArr.Length < 2)
+                return FailPath();
 
             if (!HasFloorAtWorld(destination))
-            {
-                IsPathFailed = true;
-                return;
-            }
+                return FailPath();
 
             Vector3Int startCell = globalGrid.WorldToCell(transform.position);
             Vector3Int endCell   = globalGrid.WorldToCell(destination);
 
             _totalPathCount = agent.GetPath(startCell, endCell, _pathArr);
 
-            if (_totalPathCount < 2)
+            if (_totalPathCount == 1)
             {
-                IsPathFailed = true;
-                return;
+                IsArrived = true;
+                StopMovement();
+                return true;
             }
 
-            _prevPosition = _entity.Transform.position;
+            if (_totalPathCount < 2)
+                return FailPath();
+
+            _prevPosition = _entity != null ? _entity.Transform.position : transform.position;
             _currentPathIndex = 1;
+            return true;
+        }
+
+        private bool FailPath()
+        {
+            _totalPathCount = 0;
+            _currentPathIndex = 0;
+            IsPathFailed = true;
+            StopMovement();
+            return false;
+        }
+
+        private void StopMovement()
+        {
+            if (_movement == null) return;
+
+            _movement.StopImmediately();
+            _movement.SetMovement(Vector2.zero);
         }
 
         private void Update()
@@ -108,14 +125,13 @@ namespace Code.Scripts.Enemies.Astar
 
             if (IsStop)
             {
-                _movement.StopImmediately();
-                _movement.SetMovement(Vector2.zero);
+                StopMovement();
                 return;
             }
 
             if (_currentPathIndex >= _totalPathCount)
             {
-                _movement.StopImmediately();
+                StopMovement();
                 return;
             }
 
@@ -126,8 +142,7 @@ namespace Code.Scripts.Enemies.Astar
             }
             else
             {
-                _movement.StopImmediately();
-                _movement.SetMovement(Vector2.zero);
+                StopMovement();
             }
         }
 

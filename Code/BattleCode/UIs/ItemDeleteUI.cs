@@ -1,7 +1,9 @@
-﻿using System;
+﻿using PSW.Code.EventBus;
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Work.PSB.Code.CoreSystem.Sounds;
 using YIS.Code.Items;
 
 namespace PSB.Code.BattleCode.UIs
@@ -21,6 +23,10 @@ namespace PSB.Code.BattleCode.UIs
         [SerializeField] private Button plusButton;
         [SerializeField] private Button confirmButton;
         [SerializeField] private Button cancelButton;
+
+        [Header("Sound")]
+        [SerializeField] private SoundSO uiClickSound;
+        [SerializeField] private SoundSO uiErrorSound;
         
         public bool IsInputEditing =>
             gameObject.activeInHierarchy &&
@@ -37,10 +43,17 @@ namespace PSB.Code.BattleCode.UIs
 
         private void Awake()
         {
-            minusButton.onClick.AddListener(OnMinus);
-            plusButton.onClick.AddListener(OnPlus);
-            confirmButton.onClick.AddListener(OnConfirm);
-            cancelButton.onClick.AddListener(Hide);
+            if (minusButton != null)
+                minusButton.onClick.AddListener(OnMinus);
+
+            if (plusButton != null)
+                plusButton.onClick.AddListener(OnPlus);
+
+            if (confirmButton != null)
+                confirmButton.onClick.AddListener(OnConfirm);
+
+            if (cancelButton != null)
+                cancelButton.onClick.AddListener(OnCancel);
 
             SetupCountInput();
             HideImmediate();
@@ -75,7 +88,7 @@ namespace PSB.Code.BattleCode.UIs
             }
 
             if (nameText != null)
-                nameText.SetText(visual != null ? visual.itemName : "-");
+                nameText.SetText(visual != null ? visual.uiName : "-");
 
             SetInputText(_count);
             RefreshButtons();
@@ -140,6 +153,15 @@ namespace PSB.Code.BattleCode.UIs
         {
             OnInputCommitted(countInput != null ? countInput.text : _count.ToString());
 
+            if (_count <= 1)
+            {
+                PlaySfx(transform.position, uiErrorSound);
+                RefreshButtons();
+                return;
+            }
+
+            PlaySfx(transform.position, uiClickSound);
+
             _count = Mathf.Clamp(_count - 1, 1, _max);
             SetInputText(_count);
             RefreshButtons();
@@ -148,6 +170,15 @@ namespace PSB.Code.BattleCode.UIs
         private void OnPlus()
         {
             OnInputCommitted(countInput != null ? countInput.text : _count.ToString());
+
+            if (_count >= _max)
+            {
+                PlaySfx(transform.position, uiErrorSound);
+                RefreshButtons();
+                return;
+            }
+
+            PlaySfx(transform.position, uiClickSound);
 
             _count = Mathf.Clamp(_count + 1, 1, _max);
             SetInputText(_count);
@@ -158,7 +189,21 @@ namespace PSB.Code.BattleCode.UIs
         {
             OnInputCommitted(countInput != null ? countInput.text : _count.ToString());
 
+            if (_onConfirm == null)
+            {
+                PlaySfx(transform.position, uiErrorSound);
+                return;
+            }
+
+            PlaySfx(transform.position, uiClickSound);
+
             _onConfirm?.Invoke(_slotIndex, _count);
+            Hide();
+        }
+
+        private void OnCancel()
+        {
+            PlaySfx(transform.position, uiClickSound);
             Hide();
         }
 
@@ -172,6 +217,7 @@ namespace PSB.Code.BattleCode.UIs
                 canvasGroup.blocksRaycasts = false;
                 canvasGroup.interactable = false;
             }
+
             gameObject.SetActive(false);
         }
 
@@ -183,7 +229,15 @@ namespace PSB.Code.BattleCode.UIs
                 canvasGroup.blocksRaycasts = false;
                 canvasGroup.interactable = false;
             }
+
             gameObject.SetActive(false);
+        }
+
+        private void PlaySfx(Vector3 position, SoundSO soundSO)
+        {
+            if (soundSO == null || soundSO.clip == null) return;
+            
+            Bus<PlaySFXEvent>.Raise(SoundEvents.PlaySFXEvent.Initialize(position, soundSO));
         }
         
     }

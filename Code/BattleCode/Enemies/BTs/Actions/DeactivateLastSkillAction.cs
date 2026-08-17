@@ -1,5 +1,6 @@
 using System;
 using PSB.Code.BattleCode.Enemies.AttackCode;
+using PSB.Code.BattleCode.Skills;
 using Unity.Behavior;
 using Unity.Properties;
 using UnityEngine;
@@ -12,14 +13,15 @@ namespace PSB.Code.BattleCode.Enemies.BTs.Actions
     public partial class DeactivateLastSkillAction : Action
     {
         [SerializeReference] public BlackboardVariable<EnemyAttack> Attack;
-
+        
         protected override Status OnStart()
         {
-            if (Attack?.Value == null) return Status.Failure;
-            if (Attack.Value.SkillExecutor == null) return Status.Failure;
-
+            if (Attack?.Value == null) return Status.Success;
+            
+            if (Attack.Value.SkillExecutor?.LastUseResult == BtSkillUseResult.Success)
+                Attack.Value.CompletePlannedIntent();
+            
             Attack.Value.ClearIntent();
-            Attack.Value.SkillExecutor.DeactivateLast();
             return Status.Success;
         }
         

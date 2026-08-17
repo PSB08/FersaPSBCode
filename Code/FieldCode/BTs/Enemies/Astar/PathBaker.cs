@@ -157,10 +157,16 @@ namespace Code.Scripts.Enemies.Astar
         private bool CanMoveWorld(Vector3 worldPos)
         {
             if (!HasTileAny_World(_groundMaps, worldPos))
+            {
                 return false;
-            
+
+            }
+
             if (HasTileAny_World(_blockedMaps, worldPos))
+            {
                 return false;
+
+            }
 
             return true;
         }
@@ -205,6 +211,7 @@ namespace Code.Scripts.Enemies.Astar
                 }
             }
         }
+
 
         private bool CheckCorner_Global(Vector3Int next, Vector3Int current)
         {
@@ -266,5 +273,7 @@ namespace Code.Scripts.Enemies.Astar
         }
 #endif
         
+
+
     }
 }

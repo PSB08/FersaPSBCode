@@ -16,8 +16,11 @@ namespace PSB.Code.FieldCode.BTs.Action
 
         protected override Status OnStart()
         {
+            if (Self.Value == null || Target.Value == null)
+                return Status.Failure;
+
             NextPosition.Value = GetAttackPosition();
-            return Status.Running;
+            return Status.Success;
         }
 
         private Vector3 GetAttackPosition()

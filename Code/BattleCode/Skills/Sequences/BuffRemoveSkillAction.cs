@@ -26,16 +26,18 @@ namespace PSB.Code.BattleCode.Skills.Sequences
             BuffModule buffModule = _target.GetModule<BuffModule>();
             if (buffModule == null) return;
 
-            var activeBuffs = buffModule.GetRawActiveBuffs();
-            
-            foreach (var buffInfo in activeBuffs)
+            if (_removeAllStacks)
             {
-                if (buffInfo.BuffKey == (int)_buffTypeToRemove)
+                buffModule.ForceClearBuff(_buffTypeToRemove);
+            }
+            else
+            {
+                var activeBuffs = buffModule.GetRawActiveBuffs();
+                foreach (var buffInfo in activeBuffs)
                 {
-                    buffModule.BuffRemover(buffInfo);
-                    
-                    if (!_removeAllStacks)
+                    if (buffInfo.BuffKey == (int)_buffTypeToRemove)
                     {
+                        buffModule.BuffRemover(buffInfo);
                         break;
                     }
                 }

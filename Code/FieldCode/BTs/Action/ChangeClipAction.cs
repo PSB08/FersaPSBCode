@@ -16,7 +16,11 @@ namespace Work.PSB.Code.FieldCode.BTs.Action
 
         protected override Status OnStart()
         {
-            Renderer.Value.ChangeClip(Clip.Value);
+            if (Renderer?.Value == null || Clip?.Value == null)
+                return Status.Failure;
+
+            //BT 상태 전환은 같은 클립이어도 Hit, End 이벤트를 다시 받을 수 있게 0초부터 재생
+            Renderer.Value.RestartClip(Clip.Value);
             return Status.Success;
         }
         

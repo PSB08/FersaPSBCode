@@ -24,6 +24,9 @@ namespace PSB.Code.BattleCode.Enemies.AttackCode
 
         public void Kill()
         {
+            if (DOTween.instance == null)
+                return;
+
             DOTween.Kill(_dashTweenId);
         }
 

@@ -2,6 +2,7 @@
 using Code.Scripts.Enemies;
 using Code.Scripts.Enemies.BT;
 using PSB.Code.BattleCode.BattleSystems.BattlePhases;
+using PSB.Code.BattleCode.Enemies;
 using PSB.Code.CoreSystem.SaveSystem;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -171,26 +172,26 @@ namespace Work.PSB.Code.FieldCode
             BattleEncounterSO combinedEncounter = ScriptableObject.CreateInstance<BattleEncounterSO>();
             combinedEncounter.name = "Dynamic_Chain_Encounter";
             
-            List<BattlePhaseData> allPhases = new List<BattlePhaseData>();
+            List<EnemySO> allEnemies = new List<EnemySO>();
             
             List<string> involvedEnemyIDs = new List<string> { enemyID };
 
-            if (battleEncounter != null && battleEncounter.phases != null)
+            if (battleEncounter != null && battleEncounter.enemies != null)
             {
-                allPhases.AddRange(battleEncounter.phases);
+                allEnemies.AddRange(battleEncounter.enemies);
             }
 
             foreach (var linked in linkedEnemies)
             {
-                if (linked.battleEncounter != null && linked.battleEncounter.phases != null)
+                if (linked.battleEncounter != null && linked.battleEncounter.enemies != null)
                 {
-                    allPhases.AddRange(linked.battleEncounter.phases);
+                    allEnemies.AddRange(linked.battleEncounter.enemies);
                 }
                 involvedEnemyIDs.Add(linked.EnemyID);
                 linked.EngageInChainBattle(); 
             }
 
-            combinedEncounter.phases = allPhases.ToArray();
+            combinedEncounter.enemies = allEnemies.ToArray();
 
             BattleContext.Set(SceneManager.GetActiveScene().name, involvedEnemyIDs, isDummyBattle);
             

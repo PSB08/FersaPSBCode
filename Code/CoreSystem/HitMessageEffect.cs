@@ -1,8 +1,10 @@
 ﻿using DG.Tweening;
+using PSW.Code.EventBus;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using YIS.Code.Events;
 
 namespace Work.PSB.Code.CoreSystem
 {
@@ -102,6 +104,8 @@ namespace Work.PSB.Code.CoreSystem
                 return;
             }
             
+            Bus<InteractUIPauseEvent>.Raise(new InteractUIPauseEvent(true));
+            
             _transitionStarted = false;
             _restoreQueued = true;
 
@@ -116,6 +120,7 @@ namespace Work.PSB.Code.CoreSystem
 
             if (transitionController != null && transitionLeadSeconds > 0f)
             {
+                
                 _leadTween = DOVirtual.DelayedCall(transitionLeadSeconds, StartTransitionIfNeeded)
                     .SetUpdate(true)
                     .SetId(TweenId);
@@ -240,6 +245,8 @@ namespace Work.PSB.Code.CoreSystem
 
             if (pixelPerfect != null)
                 pixelPerfect.enabled = _hadPp;
+            
+            Bus<InteractUIPauseEvent>.Raise(new InteractUIPauseEvent(false));
         }
 
         public void Stop()
@@ -250,9 +257,11 @@ namespace Work.PSB.Code.CoreSystem
 
             messageRect?.DOKill();
             if (cinemachine != null) DOTween.Kill(cinemachine, complete: false);
-
+            
             if (volume != null && volume.TryGet(out LensDistortion distortion) && distortion != null)
                 distortion.intensity.value = 0f;
+            
+            Bus<InteractUIPauseEvent>.Raise(new InteractUIPauseEvent(false));
         }
         
     }

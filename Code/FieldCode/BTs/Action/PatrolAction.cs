@@ -21,25 +21,32 @@ namespace PSB.Code.FieldCode.BTs.Action
         protected override Status OnStart()
         {
             Initialize();
-            if (Points.Value != null && Points.Value.gameObject.activeInHierarchy)
+
+            if (_navMovement == null || Points.Value == null || !Points.Value.gameObject.activeInHierarchy || Points.Value.Length <= 0)
+                return Status.Failure;
+
+            if (_currentPointIdx >= Points.Value.Length)
+                _currentPointIdx = 0;
+
+            if (_navMovement.SetDestination(Points.Value[_currentPointIdx]))
             {
-                _navMovement.SetDestination(Points.Value[_currentPointIdx]);
                 return Status.Running;
             }
-            else
-            {
-                return Status.Failure;
-            }
+
+            return Status.Failure;
         }
 
         private void Initialize()
         {
-            if (_navMovement == null)
+            if (_navMovement == null && Self.Value != null)
                 _navMovement = Self.Value.GetModule<PathMovement>();
         }
 
         protected override Status OnUpdate()
         {
+            if (_navMovement == null || _navMovement.IsPathFailed)
+                return Status.Failure;
+
             if (_navMovement.IsArrived)
                 return Status.Success;
             return Status.Running;
@@ -47,7 +54,7 @@ namespace PSB.Code.FieldCode.BTs.Action
 
         protected override void OnEnd()
         {
-            if (Points.Value != null && Points.Value.gameObject.activeInHierarchy)
+            if (Points.Value != null && Points.Value.gameObject.activeInHierarchy && Points.Value.Length > 0)
                 _currentPointIdx = (_currentPointIdx + 1) % Points.Value.Length;
         }
     

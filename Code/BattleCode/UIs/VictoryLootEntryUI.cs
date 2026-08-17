@@ -1,8 +1,10 @@
-﻿using System;
+﻿using PSW.Code.EventBus;
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Work.PSB.Code.CoreSystem.Sounds;
 using YIS.Code.Items;
 
 namespace PSB.Code.BattleCode.UIs
@@ -12,6 +14,7 @@ namespace PSB.Code.BattleCode.UIs
         [SerializeField] private ItemPanelTooltipUI tooltipUI;
         [SerializeField] private Image icon;
         [SerializeField] private TextMeshProUGUI amountText;
+        [SerializeField] private SoundSO hoverSound;
 
         private void Start()
         {
@@ -37,11 +40,20 @@ namespace PSB.Code.BattleCode.UIs
         public void OnPointerEnter(PointerEventData eventData)
         {
             tooltipUI.gameObject.SetActive(true);
+            PlaySfx(hoverSound);
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
             tooltipUI.gameObject.SetActive(false);
+        }
+        
+        private void PlaySfx(SoundSO soundSO)
+        {
+            if (soundSO == null || soundSO.clip == null)
+                return;
+
+            Bus<PlaySFXEvent>.Raise(SoundEvents.PlaySFXEvent.Initialize(transform.position, soundSO));
         }
         
     }

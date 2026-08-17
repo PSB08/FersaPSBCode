@@ -5,6 +5,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Work.PSB.Code.CoreSystem.Sounds;
 using YIS.Code.Defines;
 using YIS.Code.Events;
 
@@ -31,6 +32,8 @@ namespace PSB.Code.BattleCode.UIs.BossShopUI
         [SerializeField] private string setValue = "_BloomPower";
         [SerializeField] private float popTime = 0.25f;
         [SerializeField] private float popUpValue = 10;
+        
+        [SerializeField] private SoundSO hoverSound;
 
         private bool _isSpend = false;
         
@@ -112,9 +115,12 @@ namespace PSB.Code.BattleCode.UIs.BossShopUI
 
         public void OnPointerEnter(PointerEventData eventData)
         {
+            if (Btn != null && Btn.interactable)
+                PlaySfx(hoverSound);
+            
             outLineMap.DOKill();
             Btn.image.material = outLineMap;
-            outLineMap.DOFloat(popUpValue, setValue, popTime);
+            outLineMap.DOFloat(popUpValue, setValue, popTime).SetUpdate(true);
 
             Bus<DescUIActiveEvent>.Raise(new DescUIActiveEvent(true));
             switch (ItemDataSO.shopItemData.shopItemType)
@@ -132,8 +138,16 @@ namespace PSB.Code.BattleCode.UIs.BossShopUI
         {
             outLineMap.DOFloat(0, setValue, popTime)
                 .OnComplete(() => Btn.image.material = null)
-                .OnKill(() => Btn.image.material = null);
+                .OnKill(() => Btn.image.material = null).SetUpdate(true);
             Bus<DescUIActiveEvent>.Raise(new DescUIActiveEvent(false));
+        }
+        
+        private void PlaySfx(SoundSO soundSO)
+        {
+            if (soundSO == null || soundSO.clip == null)
+                return;
+
+            Bus<PlaySFXEvent>.Raise(SoundEvents.PlaySFXEvent.Initialize(transform.position, soundSO));
         }
         
     }

@@ -6,6 +6,8 @@ namespace Work.PSB.Code.FieldCode.MapSaves
 {
     public class MainWarpInteraction : MonoBehaviour, IInteractable
     {
+        [field: SerializeField] public Transform InteractUITrm { get; private set; }
+        [field: SerializeField] public bool CanUIShow { get; private set; } = true;
         [field:SerializeField] public string Name { get; set; }
         public Transform Transform => transform;
 

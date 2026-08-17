@@ -33,6 +33,13 @@ namespace Work.PSB.Code.FieldCode.MapSaves
         public string id;
         public bool isFinished;
     }
+
+    [Serializable]
+    public class ActiveRewardSaveState
+    {
+        public string rewardKey;
+        public bool isActive;
+    }
     
     [Serializable]
     public class SceneState
@@ -42,6 +49,7 @@ namespace Work.PSB.Code.FieldCode.MapSaves
         public List<BoxSaveState> boxes = new List<BoxSaveState>();
         public List<GimmickSaveState> gimmicks = new List<GimmickSaveState>();
         public List<TalkSaveState> talks = new List<TalkSaveState>();
+        public List<ActiveRewardSaveState> activeRewards = new List<ActiveRewardSaveState>();
     }
     
 }

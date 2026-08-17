@@ -138,6 +138,31 @@ namespace Work.PSB.Code.FieldCode.MapSaves
 
             SaveScene(sceneName, data);
         }
+
+        public static void SetActiveReward(string sceneName, string rewardKey, bool isActive)
+        {
+            if (string.IsNullOrEmpty(sceneName) || string.IsNullOrEmpty(rewardKey))
+                return;
+
+            SceneState data = LoadScene(sceneName) ?? new SceneState();
+            data.activeRewards ??= new List<ActiveRewardSaveState>();
+
+            int idx = data.activeRewards.FindIndex(r => r.rewardKey == rewardKey);
+            if (idx < 0)
+            {
+                data.activeRewards.Add(new ActiveRewardSaveState
+                {
+                    rewardKey = rewardKey,
+                    isActive = isActive
+                });
+            }
+            else
+            {
+                data.activeRewards[idx].isActive = isActive;
+            }
+
+            SaveScene(sceneName, data);
+        }
         
         public static void DeleteAllSaves()
         {

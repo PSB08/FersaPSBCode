@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using PSB_Lib.StatSystem;
 using PSB.Code.BattleCode.Enemies.AttackCode;
-using PSB.Code.BattleCode.Enemies.Phases;
+using PSB.Code.BattleCode.Enemies.Mechanics;
 using PSB.Code.BattleCode.Enums;
 using PSB.Code.BattleCode.Items;
 using UnityEngine;
@@ -21,60 +21,77 @@ namespace PSB.Code.BattleCode.Enemies
         public EnemyGrade grade;
         public bool isRanged;
         
-        [Header("Stat")]
-        public StatListSO statListSO;
         [Header("Stat Overrides")]
         public StatOverride[] statOverrides;
-
+        
         [Header("Progression")]
         public EnemyProgressionSO progressionSO;
         
         [Header("Drop")]
         public DropTableSO dropTable;
         
-        [Header("Damage Scaling")]
-        public string attackStatName = "Attack";
-        public float attackStatScale = 0.5f;
-        
         [Header("Attack Skills")]
         public SkillDataSO[] attackSkills;
         
-        [Header("Phase System")]
-        public EnemyPhaseData[] phases;
+        [Header("Enemy AI Resources")]
+        [Min(1)] public int maxCost = 10;
+        [Min(1)] public int maxHandSkillCount = 5;
+        [Min(1)] public int maxOwnedSkillCount = 10;
+        
+        [Header("Enemy Mechanics")]
+        public EnemyMechanicSetSO mechanicSet;
+        
+        public bool IsOverOwnedSkillLimit(SkillDataSO[] skills, out int assignedCount, out int maxCount)
+        {
+            assignedCount = CountAssignedSkills(skills);
+            maxCount = Mathf.Max(1, maxOwnedSkillCount);
+            return assignedCount > maxCount;
+        }
+        
+        public EnemyMechanicValidationReport BuildMechanicValidationReport()
+        {
+            if (mechanicSet == null)
+                return new EnemyMechanicValidationReport();
+            
+            return mechanicSet.ValidateFor(this);
+        }
+        
+        private static int CountAssignedSkills(SkillDataSO[] skills)
+        {
+            if (skills == null) return 0;
+            
+            int count = 0;
+            for (int i = 0; i < skills.Length; i++)
+            {
+                if (skills[i] != null) count++;
+            }
+            
+            return count;
+        }
         
 #if UNITY_EDITOR
-        public void SyncStatOverrides()
+        private void OnValidate()
         {
-            Dictionary<StatSO, StatOverride> oldList = new();
-
-            if (statOverrides != null)
+            if (maxCost <= 0) maxCost = 10;
+            if (maxHandSkillCount <= 0) maxHandSkillCount = 5;
+            if (maxOwnedSkillCount <= 0) maxOwnedSkillCount = 10;
+            
+            if (IsOverOwnedSkillLimit(attackSkills, out int assignedCount, out int maxCount))
             {
-                foreach (StatOverride ov in statOverrides)
-                {
-                    if (ov == null || ov.Stat == null) continue;
-
-                    if (!oldList.ContainsKey(ov.Stat))
-                        oldList.Add(ov.Stat, ov);
-                }
+                Debug.LogWarning($"[EnemySO] {name} attackSkills count is {assignedCount}, but maxOwnedSkillCount is {maxCount}.", this);
             }
-
-            List<StatOverride> newList = new();
-
-            foreach (StatSO stat in statListSO.statDataList)
+            
+            EnemyMechanicValidationReport report = BuildMechanicValidationReport();
+            
+            for (int i = 0; i < report.Errors.Count; i++)
             {
-                if (stat == null) continue;
-
-                if (oldList.TryGetValue(stat, out StatOverride overStat))
-                {
-                    newList.Add(overStat);
-                }
-                else
-                {
-                    newList.Add(new StatOverride(stat));
-                }
+                Debug.LogError($"[EnemySO] {name} : {report.Errors[i]}", this);
             }
-
-            statOverrides = newList.ToArray();
+            
+            for (int i = 0; i < report.Warnings.Count; i++)
+            {
+                Debug.LogWarning($"[EnemySO] {name} : {report.Warnings[i]}", this);
+            }
         }
 #endif
         

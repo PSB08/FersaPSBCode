@@ -3,7 +3,8 @@ using PSB.Code.BattleCode.Events;
 using PSW.Code.EventBus;
 using UnityEngine;
 using Work.PSB.Code.CoreSystem;
-using Work.Scripts.UI;
+using Work.PSB.Code.CoreSystem.Sounds;
+using YIS.Code.CoreSystem;
 
 namespace PSB.Code.BattleCode.UIs
 {
@@ -14,8 +15,10 @@ namespace PSB.Code.BattleCode.UIs
         [Header("Size Animation")]
         [SerializeField] private EndPanelSizeToggle_Model sizeModel;
         [SerializeField] private EndPanelSizeToggle_View sizeView;
+        
+        [SerializeField] private RunResetService runResetService;
 
-        [SerializeField] private StageUIDataSO stageUIDataSO;
+        [SerializeField] private SoundSO uiClickSound;
 
         private bool _isShown;
 
@@ -72,8 +75,9 @@ namespace PSB.Code.BattleCode.UIs
 
         public void ExitBtn()
         {
+            Bus<PlaySFXEvent>.Raise(SoundEvents.PlaySFXEvent.Initialize(transform.position, uiClickSound));
             Hide();
-            stageUIDataSO.DeleteJson();
+            runResetService.ResetForNextRun();
             Invoke(nameof(DoTransition), sizeModel.GetPopTime());
         }
 

@@ -32,8 +32,7 @@ namespace PSB.Code.BattleCode.Players
             if (_cache == null) return;
             if (evt.Skill == null) return;
 
-            if (_cache.TryGetOrCreate(evt.Skill, out var skill) && skill != null)
-                skill.gameObject.SetActive(true);
+            _cache.SetActive(evt.Skill, true);
         }
 
         private void OnUnequipped(SkillIconUnequippedEvent evt)

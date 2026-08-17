@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using YIS.Code.CoreSystem;
+using PSB.Code.BattleCode.Skills;
 using YIS.Code.Skills;
 
 namespace PSB.Code.BattleCode.Commands
@@ -49,7 +50,14 @@ namespace PSB.Code.BattleCode.Commands
                 if (!context.Executor.CanExecuteById(id, context.Target))
                     continue;
 
-                any = context.Executor.ExecuteById(id, isChain, context.Target);
+                bool handled = context.Executor.ExecuteById(id, isChain, context.Target);
+                any |= handled;
+
+                if (context.Executor is ISkillUseResultExecutor resultExecutor &&
+                    resultExecutor.LastUseResult.ShouldStopRemainingActions())
+                {
+                    break;
+                }
             }
 
             Debug.Log($"실행자 {context.Caster}");

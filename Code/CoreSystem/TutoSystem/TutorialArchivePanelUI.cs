@@ -1,9 +1,11 @@
 ﻿using CIW.Code.Player.Field;
 using DG.Tweening;
 using PSW.Code.BaseSystem;
+using PSW.Code.EventBus;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Work.PSB.Code.CoreSystem.Sounds;
 
 namespace Work.PSB.Code.CoreSystem.TutoSystem
 {
@@ -19,6 +21,8 @@ namespace Work.PSB.Code.CoreSystem.TutoSystem
 
         [Header("Input")]
         [SerializeField] private PlayerFieldInputSO fieldInputSO;
+        
+        [SerializeField] private SoundSO uiClickSound;
 
         private readonly List<TutorialDataSO> _filtered = new();
 
@@ -227,6 +231,8 @@ namespace Work.PSB.Code.CoreSystem.TutoSystem
             if (_isTransitioning || tutorialIndex < 0 || tutorialIndex >= _filtered.Count)
                 return;
 
+            PlayClickSfx();
+
             _selectedTutorialIndex = tutorialIndex;
             _currentPageIndex = 0;
 
@@ -244,6 +250,8 @@ namespace Work.PSB.Code.CoreSystem.TutoSystem
 
             if (_currentPageIndex > 0)
             {
+                PlayClickSfx();
+
                 _currentPageIndex--;
                 RefreshDetailView();
                 return;
@@ -251,6 +259,8 @@ namespace Work.PSB.Code.CoreSystem.TutoSystem
 
             if (_selectedTutorialIndex > 0)
             {
+                PlayClickSfx();
+
                 _selectedTutorialIndex--;
                 var prevTutorial = CurrentTutorial;
                 _currentPageIndex = Mathf.Max(0, prevTutorial.PageCount - 1);
@@ -270,6 +280,8 @@ namespace Work.PSB.Code.CoreSystem.TutoSystem
 
             if (_currentPageIndex < tutorial.PageCount - 1)
             {
+                PlayClickSfx();
+
                 _currentPageIndex++;
                 RefreshDetailView();
                 return;
@@ -277,6 +289,8 @@ namespace Work.PSB.Code.CoreSystem.TutoSystem
 
             if (_selectedTutorialIndex < _filtered.Count - 1)
             {
+                PlayClickSfx();
+
                 _selectedTutorialIndex++;
                 _currentPageIndex = 0;
 
@@ -323,5 +337,14 @@ namespace Work.PSB.Code.CoreSystem.TutoSystem
                 SetFieldInputEnabled(true);
             }).SetUpdate(true);
         }
+        
+        private void PlayClickSfx()
+        {
+            if (uiClickSound == null || uiClickSound.clip == null)
+                return;
+
+            Bus<PlaySFXEvent>.Raise(SoundEvents.PlaySFXEvent.Initialize(transform.position, uiClickSound));
+        }
+        
     }
 }

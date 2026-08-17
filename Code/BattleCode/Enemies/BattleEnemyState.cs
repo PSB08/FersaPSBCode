@@ -10,6 +10,8 @@ namespace PSB.Code.BattleCode.Enemies
         Attack, 
         Return, 
         Hit, 
-        Dead
+        Dead,
+        Stun,
+        Wake
     }
 }

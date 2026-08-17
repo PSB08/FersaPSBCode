@@ -8,6 +8,9 @@ namespace PSB.Code.BattleCode.Enemies
     {
         public static void SortEnemiesList(List<BattleEnemy> enemies)
         {
+            if (enemies == null)
+                return;
+
             Dictionary<BattleEnemy, int> originIndex = new Dictionary<BattleEnemy, int>();
             for (int i = 0; i < enemies.Count; i++)
                 originIndex[enemies[i]] = i;
@@ -18,56 +21,42 @@ namespace PSB.Code.BattleCode.Enemies
                 if (a == null) return 1;
                 if (b == null) return -1;
 
-                int priA = GetPlacementPriority(a.enemySO.grade);
-                int priB = GetPlacementPriority(b.enemySO.grade);
+                int priA = GetGradePriority(a);
+                int priB = GetGradePriority(b);
 
-                int compare = priA.CompareTo(priB);
+                int compare = priB.CompareTo(priA);
                 if (compare != 0) return compare;
 
                 return originIndex[a].CompareTo(originIndex[b]);
             });
-
-            int bossIndex = enemies.FindIndex(e => e != null && e.enemySO.grade == EnemyGrade.Boss);
-            if (bossIndex >= 0)
-            {
-                BattleEnemy boss = enemies[bossIndex];
-                enemies.RemoveAt(bossIndex);
-
-                int cnt = enemies.Count + 1;
-                int insertCnt = cnt / 2;
-
-                enemies.Insert(insertCnt, boss);
-            }
         }
 
-        private static int GetPlacementPriority(EnemyGrade grade)
+        private static int GetGradePriority(BattleEnemy enemy)
         {
+            if (enemy == null || enemy.enemySO == null)
+                return -1;
+
+            EnemyGrade grade = enemy.enemySO.grade;
             return grade switch
             {
                 EnemyGrade.Common => 0,
-                EnemyGrade.MiniBoss => 1,
-                EnemyGrade.Boss => 2,
-                EnemyGrade.Elite => 3,
-                _ => 1
+                EnemyGrade.Elite => 1,
+                EnemyGrade.MiniBoss => 2,
+                EnemyGrade.Boss => 3,
+                _ => 0
             };
         }
 
-        public static List<Vector3> ComputePositions(List<BattleEnemy> enemies, int columns, Vector2 startPosition, Vector2 cellSize, BatchSize batchSize)
+        public static List<Vector3> ComputePositions(List<BattleEnemy> enemies, int maxActiveEnemyCount, Vector2 startPosition, Vector2 cellSize, float backLineExtraX, BatchSize batchSize)
         {
             if (enemies.Count <= 0) return null;
 
             List<Vector3> positions = new List<Vector3>(enemies.Count);
+            int maxSlotIndex = Mathf.Max(0, Mathf.Min(maxActiveEnemyCount, 3) - 1);
             for (int i = 0; i < enemies.Count; i++)
             {
-                int row = i / columns;
-                int col = i % columns;
-
-                float yOffset = (i == 1 || i == 3) ? cellSize.y : 0f;
-
-                Vector3 pos = new Vector3(startPosition.x + col * cellSize.x, 
-                    startPosition.y - row * cellSize.y + yOffset, 0f);
-
-                positions.Add(pos);
+                int slotIndex = Mathf.Clamp(i, 0, maxSlotIndex);
+                positions.Add(GetThreeEnemySlotPosition(slotIndex, startPosition, cellSize, backLineExtraX));
             }
 
             float minX = float.MaxValue, maxX = float.MinValue;
@@ -111,19 +100,31 @@ namespace PSB.Code.BattleCode.Enemies
             return result;
         }
 
+        private static Vector3 GetThreeEnemySlotPosition(int index, Vector2 startPosition, Vector2 cellSize, float backLineExtraX)
+        {
+            float backLineX = cellSize.x + backLineExtraX;
+            Vector2 offset = index switch
+            {
+                0 => Vector2.zero,
+                1 => new Vector2(backLineX, cellSize.y),
+                2 => new Vector2(backLineX, -cellSize.y),
+                _ => new Vector2(backLineX, -cellSize.y)
+            };
+
+            Vector2 pos = startPosition + offset;
+            return new Vector3(pos.x, pos.y, 0f);
+        }
+
         public static void ApplySortingOrders(List<BattleEnemy> enemies)
         {
-            const int frontBase = 20;
-            const int backBase = 10;
+            int[] ordersBySlot = { 20, 10, 30 };
 
             for (int i = 0; i < enemies.Count; i++)
             {
                 BattleEnemy enemy = enemies[i];
                 if (enemy == null) continue;
 
-                bool isFront = i % 2 == 0;
-                int baseOrder = isFront ? frontBase : backBase;
-                int order = baseOrder + i;
+                int order = i < ordersBySlot.Length ? ordersBySlot[i] : 20 + i;
 
                 SpriteRenderer[] renderers = enemy.GetComponentsInChildren<SpriteRenderer>(true);
                 for (int r = 0; r < renderers.Length; r++)

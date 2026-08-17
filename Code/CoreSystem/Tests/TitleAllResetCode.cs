@@ -12,6 +12,11 @@ namespace Work.PSB.Code.CoreSystem.Tests
     {
         [SerializeField] private DataManager dataManager;
         [SerializeField] private TitleButton titleButton;
+        
+        private void Start()
+        {
+            Time.timeScale = 1f;
+        }
 
         public void AllResetEvent()
         {

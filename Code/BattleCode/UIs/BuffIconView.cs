@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Work.PSB.Code.CoreSystem.Sounds;
 using YIS.Code.Modules;
 
 namespace PSB.Code.BattleCode.UIs
@@ -15,6 +16,8 @@ namespace PSB.Code.BattleCode.UIs
 
         [Header("Tooltip")]
         [SerializeField] private BuffTooltipUI tooltipPrefab;
+
+        [SerializeField] private SoundSO uiClickSound;
 
         private BuffVisualSO _buffVisualData;
         private BuffTooltipUI _tooltipInstance;
@@ -90,6 +93,7 @@ namespace PSB.Code.BattleCode.UIs
             if (_ownerBuffModule == null) return;
 
             Bus<BuffListOpenEvent>.Raise(new BuffListOpenEvent(_ownerBuffModule.UiTarget));
+            Bus<PlaySFXEvent>.Raise(SoundEvents.PlaySFXEvent.Initialize(transform.position, uiClickSound));
         }
         
     }

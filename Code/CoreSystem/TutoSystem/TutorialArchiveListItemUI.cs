@@ -1,7 +1,9 @@
-﻿using System;
+﻿using PSW.Code.EventBus;
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Work.PSB.Code.CoreSystem.Sounds;
 
 namespace Work.PSB.Code.CoreSystem.TutoSystem
 {
@@ -10,6 +12,8 @@ namespace Work.PSB.Code.CoreSystem.TutoSystem
         [SerializeField] private Button button;
         [SerializeField] private TextMeshProUGUI titleText;
         [SerializeField] private GameObject selectedObject;
+        
+        [SerializeField] private SoundSO uiClickSound;
 
         private TutorialDataSO _data;
         private Action<TutorialDataSO> _onClick;
@@ -41,6 +45,7 @@ namespace Work.PSB.Code.CoreSystem.TutoSystem
 
         private void HandleClick()
         {
+            PlayClickSfx();
             _onClick?.Invoke(_data);
         }
         
@@ -48,6 +53,14 @@ namespace Work.PSB.Code.CoreSystem.TutoSystem
         {
             if (button != null)
                 button.interactable = v;
+        }
+        
+        private void PlayClickSfx()
+        {
+            if (uiClickSound == null || uiClickSound.clip == null)
+                return;
+
+            Bus<PlaySFXEvent>.Raise(SoundEvents.PlaySFXEvent.Initialize(transform.position, uiClickSound));
         }
         
     }

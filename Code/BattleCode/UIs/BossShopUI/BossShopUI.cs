@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
+using Work.PSB.Code.CoreSystem.Sounds;
 using YIS.Code.UI;
 using YIS.Code.Defines;
 using YIS.Code.Events;
@@ -22,6 +23,10 @@ namespace PSB.Code.BattleCode.UIs.BossShopUI
         [SerializeField] private Transform itemRoot;
         [SerializeField] private Transform skillRoot;
         [SerializeField] private Transform detailRoot;
+        
+        [SerializeField] private SoundSO clickSound;
+        [SerializeField] private SoundSO errorSound;
+        [SerializeField] private SoundSO buySound;
 
         private List<UnlockItemUI> _shopItems;
         private List<UnlockItemUI> _shopSkills;
@@ -181,6 +186,7 @@ namespace PSB.Code.BattleCode.UIs.BossShopUI
         
         private void Quit()
         {
+            PlaySfx(clickSound);
             PopUp();
         }
 
@@ -188,13 +194,22 @@ namespace PSB.Code.BattleCode.UIs.BossShopUI
         {
             if (!_service.UnlockItem(item))
             {
+                PlaySfx(errorSound);
                 Debug.Log("<color=red>해금 실패!</color>");
                 return false;
             }
 
+            PlaySfx(buySound);
             Debug.Log("<color=green>해금 성공!</color>");
-            
             return true;
+        }
+
+        private void PlaySfx(SoundSO soundSO)
+        {
+            if (soundSO == null || soundSO.clip == null)
+                return;
+
+            Bus<PlaySFXEvent>.Raise(SoundEvents.PlaySFXEvent.Initialize(transform.position, soundSO));
         }
 
         private void OnDisable()

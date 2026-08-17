@@ -14,27 +14,31 @@ namespace PSB.Code.BattleCode.Enemies.BTs.Actions
     {
         [SerializeReference] public BlackboardVariable<EnemyAttack> EnemyAttack;
         [SerializeReference] public BlackboardVariable<Vector3> DashPos;
-
+        
         private Tween _t;
-
+        
         protected override Status OnStart()
         {
             if (EnemyAttack?.Value == null) return Status.Failure;
             if (!EnemyAttack.Value.IsMelee) return Status.Success;
-
+            if (EnemyAttack.Value.HasPerformedTurnApproach) return Status.Success;
+            
             EnemyAttack.Value.Mover.Kill();
             
             _t = EnemyAttack.Value.Mover.AnticipateAndDashTo(DashPos.Value);
-
+            if (_t == null) return Status.Failure;
+            
+            EnemyAttack.Value.MarkTurnApproachPerformed();
+            
             return Status.Running;
         }
-
+        
         protected override Status OnUpdate()
         {
             if (_t == null) return Status.Failure;
             return (_t.IsActive() && _t.IsPlaying()) ? Status.Running : Status.Success;
         }
-
+        
         protected override void OnEnd()
         {
             _t = null;

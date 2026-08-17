@@ -3,6 +3,7 @@ using PSB.Code.BattleCode.Players;
 using UnityEngine;
 using Work.PSB.Code.CoreSystem;
 using Work.Scripts.UI;
+using YIS.Code.CoreSystem;
 
 namespace PSB.Code.BattleCode.UIs
 {
@@ -17,7 +18,7 @@ namespace PSB.Code.BattleCode.UIs
         [SerializeField] private EndPanelSizeToggle_View sizeView;
 
         [SerializeField] private float reviveHpRatio = 0.5f;
-        [SerializeField] private StageUIDataSO stageUIDataSO;
+        [SerializeField] private RunResetService runResetService;
 
         private bool _isShown;
         private Coroutine _showCo;
@@ -129,7 +130,7 @@ namespace PSB.Code.BattleCode.UIs
         public void ExitBtn()
         {
             Hide();
-            stageUIDataSO.DeleteJson();
+            runResetService.ResetForNextRun();
             Invoke(nameof(DoTransition), sizeModel.GetPopTime());
         }
 
